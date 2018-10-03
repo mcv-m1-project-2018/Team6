@@ -1,0 +1,35 @@
+Instructions to configure Python with virtualenv in the virtual server
+----------------------------------------------------------------------
+
+1. Create a directory to store the virtualenvs:
+
+   $ cd ~; mkdir virtualenvs
+
+2. Create the virtualenv
+
+   $ virtualenv --python=python3.6 ~/virtualenvs/m1-proj
+
+3. Activate the virtualenv: (you must do that at each session start)
+
+   $ source ~/virtualenvs/m1-proj/bin/activate
+
+4. Install packages:
+
+pip install numpy
+pip install imageio
+pip install docopt
+pip install scikit-image
+...
+
+NOTE: OpenCV 3.4.1 is already installed. It can be used used with "import cv2".
+
+5. Get help about virtualenvs:
+
+https://virtualenv.pypa.io/en/stable/
+
+
+6. Provide info about your virtualenv:
+
+   If you install additional packages, create (and upload to github) a requirements.txt file:
+   $ pip freeze > requirements.txt
+
