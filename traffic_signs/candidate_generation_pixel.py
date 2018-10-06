@@ -3,7 +3,7 @@
 import numpy as np
 import imageio
 from skimage import color
-from matplotlib import pyplot as plt
+import cv2
 
 
 def candidate_generation_pixel_normrgb(im):
@@ -33,6 +33,40 @@ def candidate_generation_pixel_hsv(im):
     pixel_candidates = hsv_im[:, :, 1] > 0.4;
 
     return pixel_candidates
+
+
+# Create your own candidate_generation_pixel_xxx functions for other color spaces/methods
+# Add them to the switcher dictionary in the switch_color_space() function
+# These functions should take an image as input and output the pixel_candidates mask image
+
+
+def rgb2ihsl(im):
+    # Convert from RGB color space to IHSL color space
+    # IHSL stands for Improved HSL color space (H.Fleyeh)
+
+    R = im[:, :, 0]
+    G = im[:, :, 1]
+    B = im[:, :, 2]
+    R, G, B = R / 255.0, G / 255.0, B / 255.0
+
+    numerador = R - G / 2 - B / 2
+    denominador = np.sqrt(np.square(R) + np.square(G) + np.square(B) - R * G - R * B - G * B)
+    theta = np.arccos(numerador / denominador)
+
+    H = np.zeros([len(G), len(G[0])])
+    S = np.zeros([len(G), len(G[0])])
+    #print(len(G), len(G[0]))
+    for i in range(len(G)):
+        for j in range(len(G[0])):
+            if G[i, j] >= G[i, j]:
+                H[i, j] = theta[i, j]
+            else:
+                H[i, j] = 360 - theta[i, j]
+
+            S[i, j] = max(R[i, j], G[i, j], B[i, j]) - min(R[i, j], G[i, j], B[i, j])
+    L = 0.212 * R + 0.715 * G + 0.072 * B
+
+    return H, S, L
 
 
 def candidate_generation_pixel_ihsl1(im):
@@ -117,51 +151,43 @@ def candidate_generation_pixel_ihsl2(im):
     return pixel_candidates
 
 
+def candidate_generation_pixel_hsv_euclidean(rgb):
+    ref_colors = [[0.0182, 0.6667, 1.0000], [0.6118, 0.6879, 1.0000]]
+    thresholds = [0.25, 0.3]
+    
+    hsv = color.rgb2hsv(rgb)
 
+    masks = []
+    for ref, thresh in zip(ref_colors, thresholds):
+        ref = np.tile(ref, hsv.shape[:2] + (1,))
+        h1 = hsv[:,:,0]
+        s1 = hsv[:,:,1]
+        h2 = ref[:,:,0]
+        s2 = ref[:,:,1]
+        dist = ((h2-h1)**2 + (s2-s1)**2)**0.5
+        mask = dist < thresh
 
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        mask = cv2.morphologyEx(mask.astype(np.uint8), cv2.MORPH_OPEN, kernel)
+        mask = cv2.medianBlur(mask, 7)
 
+        masks.append(mask)
+        
+    pixel_candidates = np.zeros(rgb.shape[:2], dtype=np.uint8)
+    for mask in masks:
+        pixel_candidates += mask
+    pixel_candidates = np.clip(pixel_candidates, 0, 1)
+    return pixel_candidates
 
-
-def rgb2ihsl(im):
-    # Convert from RGB color space to IHSL color space
-    # IHSL stands for Improved HSL color space (H.Fleyeh)
-
-    R = im[:, :, 0]
-    G = im[:, :, 1]
-    B = im[:, :, 2]
-    R, G, B = R / 255.0, G / 255.0, B / 255.0
-
-    numerador = R - G / 2 - B / 2
-    denominador = np.sqrt(np.square(R) + np.square(G) + np.square(B) - R * G - R * B - G * B)
-    theta = np.arccos(numerador / denominador)
-
-    H = np.zeros([len(G), len(G[0])])
-    S = np.zeros([len(G), len(G[0])])
-    #print(len(G), len(G[0]))
-    for i in range(len(G)):
-        for j in range(len(G[0])):
-            if G[i, j] >= G[i, j]:
-                H[i, j] = theta[i, j]
-            else:
-                H[i, j] = 360 - theta[i, j]
-
-            S[i, j] = max(R[i, j], G[i, j], B[i, j]) - min(R[i, j], G[i, j], B[i, j])
-    L = 0.212 * R + 0.715 * G + 0.072 * B
-
-    return H, S, L
-
-
-# Create your own candidate_generation_pixel_xxx functions for other color spaces/methods
-# Add them to the switcher dictionary in the switch_color_space() function
-# These functions should take an image as input and output the pixel_candidates mask image
 
 def switch_color_space(im, color_space):
     switcher = {
         'normrgb': candidate_generation_pixel_normrgb,
         'hsv': candidate_generation_pixel_hsv,
-        'ihsl_1': candidate_generation_pixel_ihsl1,
-        'ihsl_2': candidate_generation_pixel_ihsl2
         # 'lab'    : candidate_generation_pixel_lab,
+        'ihsl_1': candidate_generation_pixel_ihsl1,
+        'ihsl_2': candidate_generation_pixel_ihsl2,
+        'hsv_euclidean': candidate_generation_pixel_hsv_euclidean
     }
     # Get the function from switcher dictionary
     func = switcher.get(color_space, lambda: "Invalid color space")
@@ -179,11 +205,7 @@ def candidate_generation_pixel(im, color_space):
 
 
 if __name__ == '__main__':
-
-
     pixel_candidates1 = candidate_generation_pixel(im, 'normrgb')
     pixel_candidates2 = candidate_generation_pixel(im, 'hsv')
     pixel_candidates3 = candidate_generation_pixel(im, 'ihsl_1')
     pixel_candidates4 = candidate_generation_pixel(im, 'ihsl_2')
-
-
