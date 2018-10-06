@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import numpy as np
+import imageio
 from skimage import color
+from matplotlib import pyplot as plt
 
 
 def candidate_generation_pixel_normrgb(im):
@@ -74,6 +76,51 @@ def candidate_generation_pixel_ihsl1(im):
 
     return pixel_candidates
 
+def candidate_generation_pixel_ihsl2(im):
+
+    #convert input image to IHLS color space
+    H, S, L = rgb2ihsl(im)
+    size = im.shape #(n, m, channels)
+
+    Hout = np.zeros((size[0], size[1]))
+    Sout = np.zeros((size[0], size[1]))
+    pixel_candidates = np.zeros((size[0], size[1]))
+
+    #normalize S and H to [0, 255]
+
+    S = 255*S/np.max(S)
+    H = np.nan_to_num(H)
+    H = 255*H/np.max(H)
+
+    Smin = 51
+    Smax = 170
+
+    #the range of H defines the color (we want white, red and blue)
+    #values obtained from hue histograms in train images
+    Hmin = [145, 0, 115]
+    Hmax = [160, 10, 126]
+
+    for i in range(size[0]):
+        for j in range(size[1]):
+            if S[i,j] <= Smin:
+                Sout[i,j] = 0
+            elif S[i,j] < Smax:
+                Sout[i, j] = S[i, j]
+            else:
+                Sout[i, j] = 255
+            for k in range(len(Hmin)):
+                if H[i,j] >= Hmin[k] or H[i,j] <= Hmax[k]:
+                    Hout[i, j] = max(255, Hout[i, j])
+
+            pixel_candidates[i,j] = (Sout[i,j] and Hout[i,j])
+
+    return pixel_candidates
+
+
+
+
+
+
 
 def rgb2ihsl(im):
     # Convert from RGB color space to IHSL color space
@@ -90,7 +137,7 @@ def rgb2ihsl(im):
 
     H = np.zeros([len(G), len(G[0])])
     S = np.zeros([len(G), len(G[0])])
-    print(len(G), len(G[0]))
+    #print(len(G), len(G[0]))
     for i in range(len(G)):
         for j in range(len(G[0])):
             if G[i, j] >= G[i, j]:
@@ -112,7 +159,8 @@ def switch_color_space(im, color_space):
     switcher = {
         'normrgb': candidate_generation_pixel_normrgb,
         'hsv': candidate_generation_pixel_hsv,
-        'ihsl_1': candidate_generation_pixel_ihsl1
+        'ihsl_1': candidate_generation_pixel_ihsl1,
+        'ihsl_2': candidate_generation_pixel_ihsl2
         # 'lab'    : candidate_generation_pixel_lab,
     }
     # Get the function from switcher dictionary
@@ -131,8 +179,11 @@ def candidate_generation_pixel(im, color_space):
 
 
 if __name__ == '__main__':
+
+
     pixel_candidates1 = candidate_generation_pixel(im, 'normrgb')
     pixel_candidates2 = candidate_generation_pixel(im, 'hsv')
     pixel_candidates3 = candidate_generation_pixel(im, 'ihsl_1')
+    pixel_candidates4 = candidate_generation_pixel(im, 'ihsl_2')
 
 
