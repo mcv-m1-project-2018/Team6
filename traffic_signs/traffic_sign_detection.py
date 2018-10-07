@@ -13,6 +13,7 @@ import fnmatch
 import os
 import sys
 import pickle
+import time
 
 import numpy as np
 import imageio
@@ -75,7 +76,7 @@ def traffic_sign_detection(directory, output_dir, pixel_method, window_method):
         pixelFN = pixelFN + localPixelFN
         pixelTN = pixelTN + localPixelTN
         
-        [pixel_precision, pixel_accuracy, pixel_specificity, pixel_sensitivity] = evalf.performance_evaluation_pixel(pixelTP, pixelFP, pixelFN, pixelTN)
+        [pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixel_TP, pixel_FP, pixel_FN] = evalf.performance_evaluation_pixel(pixelTP, pixelFP, pixelFN, pixelTN)
 
         if window_method != 'None':
             # Accumulate object performance of the current image ################
@@ -89,17 +90,26 @@ def traffic_sign_detection(directory, output_dir, pixel_method, window_method):
             # Plot performance evaluation
             [window_precision, window_sensitivity, window_accuracy] = evalf.performance_evaluation_window(windowTP, windowFN, windowFP)
     
-    return [pixel_precision, pixel_accuracy, pixel_specificity, pixel_sensitivity, window_precision, window_accuracy]
+    return [pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixel_TP, pixel_FP, pixel_FN]
 
 
 if __name__ == '__main__':
     # read arguments
-    args = docopt(__doc__)
+#    args = docopt(__doc__)
 
-    images_dir = args['<dirName>']          # Directory with input images and annotations. For instance, '../../DataSetDelivered/test'
-    output_dir = args['<outPath>']          # Directory where to store output masks, etc. For instance '~/m1-results/week1/test'
-    pixel_method = args['<pixelMethod>']
-    window_method = args['--windowMethod']
+ #   images_dir = args['tain_val/val']          # Directory with input images and annotations. For instance, '../../DataSetDelivered/test'
+ #   output_dir = args['m1-results']          # Directory where to store output masks, etc. For instance '~/m1-results/week1/test'
+ #   pixel_method = args['ihls_2']
+ #   window_method = args['--windowMethod']
 
-    pixel_precision, pixel_accuracy, pixel_specificity, pixel_sensitivity, window_precision, window_accuracy = traffic_sign_detection(images_dir, output_dir, pixel_method, window_method);
-    print(pixel_precision, pixel_accuracy, pixel_specificity, pixel_sensitivity, window_precision, window_accuracy)
+    images_dir = 'train_val/val'
+    output_dir = 'results'
+    pixel_method = 'ihsl_2'
+    window_method = 'None'
+
+    t0 = time.time()
+    pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixel_TP, pixel_FP, pixel_FN = traffic_sign_detection(images_dir, output_dir, pixel_method, window_method);
+    t1 = time.time()
+    print((t1-t0)/len(sorted(fnmatch.filter(os.listdir(images_dir), '*.jpg'))))
+    #print(pixel_precision, pixel_accuracy, pixel_specificity, pixel_sensitivity, window_precision, window_accuracy)
+    print(pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixel_TP, pixel_FP, pixel_FN)

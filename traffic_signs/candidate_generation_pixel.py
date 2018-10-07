@@ -3,7 +3,8 @@
 import numpy as np
 import imageio
 from skimage import color
-import cv2
+#import cv2
+from matplotlib import pyplot as plt
 
 
 def candidate_generation_pixel_normrgb(im):
@@ -160,7 +161,7 @@ def candidate_generation_pixel_ihsl2(im):
             else:
                 Sout[i, j] = 255
             for k in range(len(Hmin)):
-                if H[i,j] >= Hmin[k] and H[i,j] <= Hmax[k]:
+                if H[i,j] >= Hmin[k] or H[i,j] <= Hmax[k]:
                     Hout[i, j] = max(255, Hout[i, j])
 
             pixel_candidates[i,j] = (Sout[i,j] and Hout[i,j])
@@ -204,7 +205,7 @@ def switch_color_space(im, color_space):
         # 'lab'    : candidate_generation_pixel_lab,
         'ihsl_1': candidate_generation_pixel_ihsl1,
         'ihsl_2': candidate_generation_pixel_ihsl2,
-        'hsv_euclidean': candidate_generation_pixel_hsv_euclidean
+        'hsv_euclidean': candidate_generation_pixel_hsv_euclidean,
         'rgb': candidate_generation_pixel_rgb
         # 'lab'    : candidate_generation_pixel_lab,
     }
@@ -225,8 +226,13 @@ def candidate_generation_pixel(im, color_space):
 
 if __name__ == '__main__':
 
+    im = imageio.imread('train_val/val/00.000949.jpg')
+
     pixel_candidates1 = candidate_generation_pixel(im, 'normrgb')
     pixel_candidates2 = candidate_generation_pixel(im, 'hsv')
     pixel_candidates3 = candidate_generation_pixel(im, 'ihsl_1')
     pixel_candidates4 = candidate_generation_pixel(im, 'ihsl_2')
     pixel_candidates5 = candidate_generation_pixel(im, 'rgb')
+
+    plt.imshow(pixel_candidates4*255)
+    plt.show()

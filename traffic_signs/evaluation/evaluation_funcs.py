@@ -92,13 +92,15 @@ def performance_evaluation_pixel(pixelTP, pixelFP, pixelFN, pixelTN):
     
     The function returns the precision, accuracy, specificity and sensitivity
     """
-    
+    if(pixelTP == 0): pixelTP = 0.01
     pixel_precision   = float(pixelTP) / float(pixelTP+pixelFP)
     pixel_accuracy    = float(pixelTP+pixelTN) / float(pixelTP+pixelFP+pixelFN+pixelTN)
     pixel_specificity = float(pixelTN) / float(pixelTN+pixelFP)
     pixel_sensitivity = float(pixelTP) / float(pixelTP+pixelFN)
+    pixel_recall      = float(pixelTP) / float(pixelTP + pixelFN)
+    pixel_F1          = float(2*(pixel_precision*pixel_recall))/float(pixel_precision+pixel_recall)
 
-    return [pixel_precision, pixel_accuracy, pixel_specificity, pixel_sensitivity]
+    return [pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixelTP, pixelFP, pixelFN]
 
 
 def performance_evaluation_window(TP, FN, FP):

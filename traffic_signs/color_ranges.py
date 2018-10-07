@@ -20,7 +20,6 @@ def dominant_colors(img, mask, bbox, k=3, n=2):
     mask_patch = mask[tly:bry, tlx:brx]
     mask_patch = np.repeat(mask_patch[:, :, np.newaxis], 3, axis=2)
     pixels = img_patch[np.nonzero(mask_patch)].reshape((-1, 3))
-    print(pixels)
 
     clt = KMeans(n_clusters=k)
     labels = clt.fit_predict(pixels)
@@ -53,7 +52,7 @@ def worker(img_file):
     colors = []
     for gt in gts:
         bbox = np.round(list(map(int, map(float, gt[:4]))))
-        colors.extend(pixel_colors(img, mask, bbox))
+        colors.extend(dominant_colors(img, mask, bbox))
     return colors
 
 
