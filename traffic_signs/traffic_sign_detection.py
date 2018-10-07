@@ -42,6 +42,7 @@ def traffic_sign_detection(directory, output_dir, pixel_method, window_method):
     file_names = sorted(fnmatch.filter(os.listdir(directory), '*.jpg'))
 
     
+    pixel_time = 0
     for name in file_names:
         base, extension = os.path.splitext(name)
 
@@ -50,7 +51,10 @@ def traffic_sign_detection(directory, output_dir, pixel_method, window_method):
         print ('{}/{}'.format(directory,name))
 
         # Candidate Generation (pixel) ######################################
+        start = time.time()
         pixel_candidates = candidate_generation_pixel(im, pixel_method)
+        end = time.time()
+        pixel_time += (end - start)
 
         fd = '{}/{}_{}'.format(output_dir, pixel_method, window_method)
         if not os.path.exists(fd):
@@ -89,9 +93,10 @@ def traffic_sign_detection(directory, output_dir, pixel_method, window_method):
 
             # Plot performance evaluation
             [window_precision, window_sensitivity, window_accuracy] = evalf.performance_evaluation_window(windowTP, windowFN, windowFP)
+            
+    pixel_time /= len(file_names)
     
-    return [pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixel_TP, pixel_FP, pixel_FN]
-
+    return [pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixel_TP, pixel_FP, pixel_FN, pixel_time]
 
 if __name__ == '__main__':
     # read arguments
@@ -102,9 +107,6 @@ if __name__ == '__main__':
     pixel_method = args['<pixelMethod>']
     window_method = args['--windowMethod']
 
-    t0 = time.time()
-    pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixel_TP, pixel_FP, pixel_FN = traffic_sign_detection(images_dir, output_dir, pixel_method, window_method);
-    t1 = time.time()
-    print((t1-t0)/len(sorted(fnmatch.filter(os.listdir(images_dir), '*.jpg'))))
+    pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixel_TP, pixel_FP, pixel_FN, pixel_time = traffic_sign_detection(images_dir, output_dir, pixel_method, window_method);
     #print(pixel_precision, pixel_accuracy, pixel_specificity, pixel_sensitivity, window_precision, window_accuracy)
-    print(pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixel_TP, pixel_FP, pixel_FN)
+    print(pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixel_TP, pixel_FP, pixel_FN, pixel_time)
