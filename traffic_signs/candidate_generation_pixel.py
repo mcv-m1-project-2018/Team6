@@ -3,7 +3,7 @@
 import numpy as np
 import imageio
 from skimage import color
-#import cv2
+import cv2
 from matplotlib import pyplot as plt
 
 
@@ -25,23 +25,6 @@ def candidate_generation_pixel_normrgb(im):
     return pixel_candidates
 
 
-def candidate_generation_pixel_rgb(im):
-    #consider in RGB space, the values near the three most common ones in the traffic signals
-    #  from the train dataset
-
-    R = im[:, :, 0]
-    G = im[:, :, 1]
-    B = im[:, :, 2]
-
-    col0_candidates = (R > 19) & (R < 97) & (G > 61) & (G < 120) & (B > 94) & (B < 161);
-    col1_candidates = (R > 143) & (R < 231) & (G > 186) & (G < 253) & (B > 178) & (B < 252);
-    col2_candidates = (R > 18) & (R < 104) & (G > 23) & (G < 55) & (B > 23) & (B < 67);
-
-    pixel_candidates = col0_candidates | col1_candidates | col2_candidates;
-
-    return pixel_candidates
-
-
 def candidate_generation_pixel_hsv(im):
     # convert input image to HSV color space
     hsv_im = color.rgb2hsv(im)
@@ -59,8 +42,9 @@ def candidate_generation_pixel_hsv(im):
 
 
 def rgb2ihsl(im):
-    # Convert from RGB color space to IHSL color space
-    # IHSL stands for Improved HSL color space (H.Fleyeh)
+    """
+    Convert from RGB color space to IHSL color space. IHSL stands for Improved HSL color space (H.Fleyeh).
+    """
 
     R = im[:, :, 0]
     G = im[:, :, 1]
@@ -128,8 +112,8 @@ def candidate_generation_pixel_ihsl1(im):
 
     return pixel_candidates
 
-def candidate_generation_pixel_ihsl2(im):
 
+def candidate_generation_pixel_ihsl2(im):
     #convert input image to IHLS color space
     H, S, L = rgb2ihsl(im)
     size = im.shape #(n, m, channels)
@@ -170,6 +154,10 @@ def candidate_generation_pixel_ihsl2(im):
 
 
 def candidate_generation_pixel_hsv_euclidean(rgb):
+    """
+    Convert to HSV and filter pixels by Euclidean distance to reference values based on H and S.
+    """
+
     ref_colors = [[0.0182, 0.6667, 1.0000], [0.6118, 0.6879, 1.0000]]
     thresholds = [0.25, 0.3]
 
@@ -198,6 +186,24 @@ def candidate_generation_pixel_hsv_euclidean(rgb):
     return pixel_candidates
 
 
+def candidate_generation_pixel_rgb(im):
+    """
+    Consider in RGB space, the values near the three most common ones in the traffic signals from the train dataset.
+    """
+
+    R = im[:, :, 0]
+    G = im[:, :, 1]
+    B = im[:, :, 2]
+
+    col0_candidates = (R > 19) & (R < 97) & (G > 61) & (G < 120) & (B > 94) & (B < 161);
+    col1_candidates = (R > 143) & (R < 231) & (G > 186) & (G < 253) & (B > 178) & (B < 252);
+    col2_candidates = (R > 18) & (R < 104) & (G > 23) & (G < 55) & (B > 23) & (B < 67);
+
+    pixel_candidates = col0_candidates | col1_candidates | col2_candidates;
+
+    return pixel_candidates
+
+
 def switch_color_space(im, color_space):
     switcher = {
         'normrgb': candidate_generation_pixel_normrgb,
@@ -207,7 +213,6 @@ def switch_color_space(im, color_space):
         'ihsl_2': candidate_generation_pixel_ihsl2,
         'hsv_euclidean': candidate_generation_pixel_hsv_euclidean,
         'rgb': candidate_generation_pixel_rgb
-        # 'lab'    : candidate_generation_pixel_lab,
     }
     # Get the function from switcher dictionary
     func = switcher.get(color_space, lambda: "Invalid color space")
@@ -225,14 +230,8 @@ def candidate_generation_pixel(im, color_space):
 
 
 if __name__ == '__main__':
-
-    im = imageio.imread('train_val/val/00.000949.jpg')
-
     pixel_candidates1 = candidate_generation_pixel(im, 'normrgb')
     pixel_candidates2 = candidate_generation_pixel(im, 'hsv')
     pixel_candidates3 = candidate_generation_pixel(im, 'ihsl_1')
     pixel_candidates4 = candidate_generation_pixel(im, 'ihsl_2')
     pixel_candidates5 = candidate_generation_pixel(im, 'rgb')
-
-    plt.imshow(pixel_candidates4*255)
-    plt.show()
