@@ -13,7 +13,7 @@ import matplotlib as mpl
 from matplotlib import pyplot as plt
 
 
-def dominant_colors(img, mask, bbox, k=3, n=2):
+def dominant_colors(img, mask, bbox, k=7, n=2):
     tly, tlx, bry, brx = bbox
     
     img_patch = img[tly:bry,tlx:brx]
