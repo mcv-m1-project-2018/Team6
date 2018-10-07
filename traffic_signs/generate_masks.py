@@ -36,10 +36,5 @@ def generate_masks(images_dir, output_dir, pixel_method):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('images_dir')
-    parser.add_argument('output_dir')
-    parser.add_argument('pixel_method')
-    args = parser.parse_args()
-    
-    generate_masks(args.images_dir, args.output_dir, args.pixel_method)
+
+    generate_masks('data/test', 'test_results', 'ihsl_2')

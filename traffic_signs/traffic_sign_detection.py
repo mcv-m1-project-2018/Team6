@@ -95,17 +95,13 @@ def traffic_sign_detection(directory, output_dir, pixel_method, window_method):
 
 if __name__ == '__main__':
     # read arguments
-#    args = docopt(__doc__)
+    args = docopt(__doc__)
 
- #   images_dir = args['tain_val/val']          # Directory with input images and annotations. For instance, '../../DataSetDelivered/test'
- #   output_dir = args['m1-results']          # Directory where to store output masks, etc. For instance '~/m1-results/week1/test'
- #   pixel_method = args['ihls_2']
- #   window_method = args['--windowMethod']
-
-    images_dir = 'train_val/val'
-    output_dir = 'results'
-    pixel_method = 'ihsl_2'
-    window_method = 'None'
+    images_dir = args[
+        '<dirName>']  # Directory with input images and annotations. For instance, '../../DataSetDelivered/test'
+    output_dir = args['<outPath>']  # Directory where to store output masks, etc. For instance '~/m1-results/week1/test'
+    pixel_method = args['<pixelMethod>']
+    window_method = args['--windowMethod']
 
     t0 = time.time()
     pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixel_TP, pixel_FP, pixel_FN = traffic_sign_detection(images_dir, output_dir, pixel_method, window_method);
