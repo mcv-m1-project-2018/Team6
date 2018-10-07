@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import stats
 from evaluation.bbox_iou import bbox_iou
 
 def performance_accumulation_pixel(pixel_candidates, pixel_annotation):
@@ -92,13 +93,12 @@ def performance_evaluation_pixel(pixelTP, pixelFP, pixelFN, pixelTN):
     
     The function returns the precision, accuracy, specificity and sensitivity
     """
-    if(pixelTP == 0): pixelTP = 0.01
     pixel_precision   = float(pixelTP) / float(pixelTP+pixelFP)
     pixel_accuracy    = float(pixelTP+pixelTN) / float(pixelTP+pixelFP+pixelFN+pixelTN)
     pixel_specificity = float(pixelTN) / float(pixelTN+pixelFP)
     pixel_sensitivity = float(pixelTP) / float(pixelTP+pixelFN)
     pixel_recall      = float(pixelTP) / float(pixelTP + pixelFN)
-    pixel_F1          = float(2*(pixel_precision*pixel_recall))/float(pixel_precision+pixel_recall)
+    pixel_F1          = stats.hmean([pixel_precision, pixel_recall]) if (pixel_precision>0 and pixel_recall>0) else 0
 
     return [pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixelTP, pixelFP, pixelFN]
 

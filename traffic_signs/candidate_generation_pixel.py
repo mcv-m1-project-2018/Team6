@@ -4,7 +4,6 @@ import numpy as np
 import imageio
 from skimage import color
 import cv2
-from matplotlib import pyplot as plt
 
 
 def candidate_generation_pixel_normrgb(im):
