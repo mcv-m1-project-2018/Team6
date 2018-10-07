@@ -97,8 +97,7 @@ if __name__ == '__main__':
     # read arguments
     args = docopt(__doc__)
 
-    images_dir = args[
-        '<dirName>']  # Directory with input images and annotations. For instance, '../../DataSetDelivered/test'
+    images_dir = args['<dirName>']  # Directory with input images and annotations. For instance, '../../DataSetDelivered/test'
     output_dir = args['<outPath>']  # Directory where to store output masks, etc. For instance '~/m1-results/week1/test'
     pixel_method = args['<pixelMethod>']
     window_method = args['--windowMethod']
