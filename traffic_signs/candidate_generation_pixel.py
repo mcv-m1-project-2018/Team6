@@ -24,6 +24,23 @@ def candidate_generation_pixel_normrgb(im):
     return pixel_candidates
 
 
+def candidate_generation_pixel_rgb(im):
+    #consider in RGB space, the values near the three most common ones in the traffic signals
+    #  from the train dataset
+
+    R = im[:, :, 0]
+    G = im[:, :, 1]
+    B = im[:, :, 2]
+
+    col0_candidates = (R > 19) & (R < 97) & (G > 61) & (G < 120) & (B > 94) & (B < 161);
+    col1_candidates = (R > 143) & (R < 231) & (G > 186) & (G < 253) & (B > 178) & (B < 252);
+    col2_candidates = (R > 18) & (R < 104) & (G > 23) & (G < 55) & (B > 23) & (B < 67);
+
+    pixel_candidates = col0_candidates | col1_candidates | col2_candidates;
+
+    return pixel_candidates
+
+
 def candidate_generation_pixel_hsv(im):
     # convert input image to HSV color space
     hsv_im = color.rgb2hsv(im)
@@ -76,8 +93,8 @@ def candidate_generation_pixel_ihsl1(im):
 
     return pixel_candidates
 
-def candidate_generation_pixel_ihsl2(im):
 
+def candidate_generation_pixel_ihsl2(im):
     #convert input image to IHLS color space
     H, S, L = rgb2ihsl(im)
     size = im.shape #(n, m, channels)
@@ -96,9 +113,9 @@ def candidate_generation_pixel_ihsl2(im):
     Smax = 170
 
     #the range of H defines the color (we want white, red and blue)
-    #values obtained from hue histograms in train images
-    Hmin = [145, 0, 115]
-    Hmax = [160, 10, 126]
+    #values obtained from hue histograms in train images, in color_ranges.py
+    Hmin = [146, 2, 104]
+    Hmax = [170, 7, 142]
 
     for i in range(size[0]):
         for j in range(size[1]):
@@ -109,17 +126,12 @@ def candidate_generation_pixel_ihsl2(im):
             else:
                 Sout[i, j] = 255
             for k in range(len(Hmin)):
-                if H[i,j] >= Hmin[k] or H[i,j] <= Hmax[k]:
+                if H[i,j] >= Hmin[k] and H[i,j] <= Hmax[k]:
                     Hout[i, j] = max(255, Hout[i, j])
 
             pixel_candidates[i,j] = (Sout[i,j] and Hout[i,j])
 
     return pixel_candidates
-
-
-
-
-
 
 
 def rgb2ihsl(im):
@@ -160,7 +172,8 @@ def switch_color_space(im, color_space):
         'normrgb': candidate_generation_pixel_normrgb,
         'hsv': candidate_generation_pixel_hsv,
         'ihsl_1': candidate_generation_pixel_ihsl1,
-        'ihsl_2': candidate_generation_pixel_ihsl2
+        'ihsl_2': candidate_generation_pixel_ihsl2,
+        'rgb': candidate_generation_pixel_rgb
         # 'lab'    : candidate_generation_pixel_lab,
     }
     # Get the function from switcher dictionary
@@ -180,10 +193,8 @@ def candidate_generation_pixel(im, color_space):
 
 if __name__ == '__main__':
 
-
     pixel_candidates1 = candidate_generation_pixel(im, 'normrgb')
     pixel_candidates2 = candidate_generation_pixel(im, 'hsv')
     pixel_candidates3 = candidate_generation_pixel(im, 'ihsl_1')
     pixel_candidates4 = candidate_generation_pixel(im, 'ihsl_2')
-
-
+    pixel_candidates5 = candidate_generation_pixel(im, 'rgb')
