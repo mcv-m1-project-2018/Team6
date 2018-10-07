@@ -204,9 +204,8 @@ def switch_color_space(im, color_space):
         # 'lab'    : candidate_generation_pixel_lab,
         'ihsl_1': candidate_generation_pixel_ihsl1,
         'ihsl_2': candidate_generation_pixel_ihsl2,
-        'hsv_euclidean': candidate_generation_pixel_hsv_euclidean
+        'hsv_euclidean': candidate_generation_pixel_hsv_euclidean,
         'rgb': candidate_generation_pixel_rgb
-        # 'lab'    : candidate_generation_pixel_lab,
     }
     # Get the function from switcher dictionary
     func = switcher.get(color_space, lambda: "Invalid color space")
