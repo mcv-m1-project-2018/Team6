@@ -24,9 +24,7 @@ Four methods included in candidate_generation_pixel.py as:
 - `candidate_generation_pixel_hsv_euclidean(rgb)`: converts to HSV and takes reference colors from
 `reference_colors.py`
 
-**`reference_colors.py`: run it to obtain average dominant colors in HSV space, from dataset in 'data/train'
-**`color_ranges.py`: run it to obtain histograms and ranges `[mean - std, mean + std]` for the most dominant colors
-in RGB space and also for hue in HSV
+**`color_utils.py`: contains helper functions to compute dominant colors in HSV space, and to obtain histograms and ranges `[mean - std, mean + std]` for the most dominant colors in RGB space and also for hue in HSV space.
 
 
 #### 4. Evaluation of methods:
