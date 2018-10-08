@@ -36,11 +36,11 @@ Each method can be evaluated by running `traffic_sign_detection.py` as:
 python3 traffic_sign_detection.py <dirName> <outPath> <pixelMethod> [--windowMethod=<wm>]
 ```
 where:
--`images_dir`: path to the validation dataset ('data/train_val/val')
--`output_dir`: path where masks are saved
--`pixel_method`: color segmentation method we are using (method1: 'ihsl_1', method2: 'ihsl_2', method3: 'rgb',
+- `images_dir`: path to the validation dataset ('data/train_val/val')
+- `output_dir`: path where masks are saved
+- `pixel_method`: color segmentation method we are using (method1: 'ihsl_1', method2: 'ihsl_2', method3: 'rgb',
  method4: 'hsv_euclidean')
--`window_method`: 'None' (it's not developed yet)
+- `window_method`: 'None' (it's not developed yet)
 
 #### 5. Masks generation:
 `generate_masks.py` is used for generating the masks for all images in the test set.
@@ -50,7 +50,7 @@ Run it by using:
 python3 generate_masks.py <images_dir> <output_dir> <pixel_method>
 ```
 where:
--`images_dir`: path to test dataset ('data/test')
--`args.output_dir`: path where masks are saved
--`args.pixel_method`: color segmentation method we are using (method1: 'ihsl_1', method2: 'ihsl_2', method3: 'rgb',
+- `images_dir`: path to test dataset ('data/test')
+- `args.output_dir`: path where masks are saved
+- `args.pixel_method`: color segmentation method we are using (method1: 'ihsl_1', method2: 'ihsl_2', method3: 'rgb',
  method4: 'hsv_euclidean')
