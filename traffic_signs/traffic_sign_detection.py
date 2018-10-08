@@ -1,8 +1,7 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 """
 Usage:
-  traffic_sign_detection.py <dirName> <outPath> <pixelMethod> [--windowMethod=<wm>] 
+  traffic_sign_detection.py <dirName> <outPath> <pixelMethod> [--windowMethod=<wm>]
   traffic_sign_detection.py -h | --help
 Options:
   --windowMethod=<wm>        Window method       [default: None]
@@ -41,7 +40,6 @@ def traffic_sign_detection(directory, output_dir, pixel_method, window_method):
     # Load image names in the given directory
     file_names = sorted(fnmatch.filter(os.listdir(directory), '*.jpg'))
 
-    
     pixel_time = 0
     for name in file_names:
         base, extension = os.path.splitext(name)
@@ -59,18 +57,18 @@ def traffic_sign_detection(directory, output_dir, pixel_method, window_method):
         fd = '{}/{}_{}'.format(output_dir, pixel_method, window_method)
         if not os.path.exists(fd):
             os.makedirs(fd)
-        
+
         out_mask_name = '{}/{}.png'.format(fd, base)
         imageio.imwrite (out_mask_name, np.uint8(np.round(pixel_candidates)))
 
         if window_method != 'None':
-            window_candidates = candidate_generation_window(im, pixel_candidates, window_method) 
+            window_candidates = candidate_generation_window(im, pixel_candidates, window_method)
 
             out_list_name = '{}/{}.pkl'.format(fd, base)
-            
+
             with open(out_list_name, "wb") as fp:   #Pickling
                 pickle.dump(window_candidates, fp)
-                      
+
         # Accumulate pixel performance of the current image #################
         pixel_annotation = imageio.imread('{}/mask/mask.{}.png'.format(directory,base)) > 0
 
@@ -79,7 +77,7 @@ def traffic_sign_detection(directory, output_dir, pixel_method, window_method):
         pixelFP = pixelFP + localPixelFP
         pixelFN = pixelFN + localPixelFN
         pixelTN = pixelTN + localPixelTN
-        
+
         [pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixel_TP, pixel_FP, pixel_FN] = evalf.performance_evaluation_pixel(pixelTP, pixelFP, pixelFN, pixelTN)
 
         if window_method != 'None':
@@ -93,9 +91,9 @@ def traffic_sign_detection(directory, output_dir, pixel_method, window_method):
 
             # Plot performance evaluation
             [window_precision, window_sensitivity, window_accuracy] = evalf.performance_evaluation_window(windowTP, windowFN, windowFP)
-            
+
     pixel_time /= len(file_names)
-    
+
     return [pixel_precision, pixel_accuracy, pixel_recall, pixel_specificity, pixel_sensitivity, pixel_F1, pixel_TP, pixel_FP, pixel_FN, pixel_time]
 
 if __name__ == '__main__':

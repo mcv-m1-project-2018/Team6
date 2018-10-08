@@ -1,5 +1,4 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 import numpy as np
 import imageio
 from skimage import color
@@ -8,7 +7,6 @@ import cv2
 
 def candidate_generation_pixel_normrgb(im):
     # convert input image to the normRGB color space
-
     normrgb_im = np.zeros(im.shape)
     eps_val = 0.00001
     norm_factor_matrix = im[:, :, 0] + im[:, :, 1] + im[:, :, 2] + eps_val
@@ -42,7 +40,7 @@ def candidate_generation_pixel_hsv(im):
 
 def rgb2ihsl(im):
     """
-    Convert from RGB color space to IHSL color space. IHSL stands for Improved HSL color space (H.Fleyeh).
+    Convert from RGB to IHSL color space. IHSL stands for Improved HSL color space (H. Fleyeh).
     """
 
     R = im[:, :, 0]
@@ -71,6 +69,13 @@ def rgb2ihsl(im):
 
 
 def candidate_generation_pixel_ihsl1(im):
+    """
+    Convert from RGB to IHLS and filter pixels by Euclidean distance to reference
+    colors. Thresholds are dinamically computed using the global mean of the luminance.
+
+    The method is explained in 'Color Detection And Segmentation For Road And Traffic Signs' (H. Fleyeh).
+    """
+
     # convert input image to IHSL color space
     H, S, L = rgb2ihsl(im)
 
@@ -113,6 +118,14 @@ def candidate_generation_pixel_ihsl1(im):
 
 
 def candidate_generation_pixel_ihsl2(im):
+    """
+    Convert from RGB to IHLS and normalize H and S channels. Then H and S values
+    are discretized and pixels are filtered using the binary mask resulting from
+    the logical AND between H and S channels.
+
+    The method is explained in 'Color Detection And Segmentation For Road And Traffic Signs' (H. Fleyeh).
+    """
+
     #convert input image to IHLS color space
     H, S, L = rgb2ihsl(im)
     size = im.shape #(n, m, channels)
@@ -154,7 +167,8 @@ def candidate_generation_pixel_ihsl2(im):
 
 def candidate_generation_pixel_hsv_euclidean(rgb):
     """
-    Convert to HSV and filter pixels by Euclidean distance to reference values based on H and S.
+    Convert from RGB to HSV and filter pixels by Euclidean distance to reference
+    values based on H and S. Thresholds are computed empirically.
     """
 
     ref_colors = [[0.0182, 0.6667, 1.0000], [0.6118, 0.6879, 1.0000]]
@@ -187,7 +201,8 @@ def candidate_generation_pixel_hsv_euclidean(rgb):
 
 def candidate_generation_pixel_rgb(im):
     """
-    Consider in RGB space, the values near the three most common ones in the traffic signals from the train dataset.
+    Consider pixels in RGB space, pixels whose values are near the three most
+    common RGB colors in the traffic signals are kept.
     """
 
     R = im[:, :, 0]
@@ -207,7 +222,7 @@ def switch_color_space(im, color_space):
     switcher = {
         'normrgb': candidate_generation_pixel_normrgb,
         'hsv': candidate_generation_pixel_hsv,
-        # 'lab'    : candidate_generation_pixel_lab,
+        #'lab'    : candidate_generation_pixel_lab,
         'ihsl_1': candidate_generation_pixel_ihsl1,
         'ihsl_2': candidate_generation_pixel_ihsl2,
         'hsv_euclidean': candidate_generation_pixel_hsv_euclidean,
@@ -224,7 +239,6 @@ def switch_color_space(im, color_space):
 
 def candidate_generation_pixel(im, color_space):
     pixel_candidates = switch_color_space(im, color_space)
-
     return pixel_candidates
 
 
@@ -233,4 +247,5 @@ if __name__ == '__main__':
     pixel_candidates2 = candidate_generation_pixel(im, 'hsv')
     pixel_candidates3 = candidate_generation_pixel(im, 'ihsl_1')
     pixel_candidates4 = candidate_generation_pixel(im, 'ihsl_2')
+    pixel_candidates4 = candidate_generation_pixel(im, 'hsv_euclidean')
     pixel_candidates5 = candidate_generation_pixel(im, 'rgb')
