@@ -80,12 +80,12 @@ def candidate_generation_pixel_ihsl1(im):
     H, S, L = rgb2ihsl(im)
 
     # set color references as White, Red and Blue:
-    SW = 0.1891
-    HW = 0.4846
-    SR = 0.6111
-    HR = 0.0196
-    SB = 0.6459
-    HB = 0.6219
+
+    SR = 0.815
+    HR = 2.843
+
+    SB = 0.6111
+    HB = 0.0196
 
     # compute threshold given the mean lightness of the image
     m = len(L)
@@ -99,19 +99,16 @@ def candidate_generation_pixel_ihsl1(im):
     threshold = np.exp(-Nmean)
 
     # compute Euclidean distance from pixel of input image to color reference values (white, red and blue)
-    Wx = (SW * np.cos(HW) - S * np.cos(H)) ** 2 + (SW * np.sin(HW) - S * np.sin(H)) ** 2
     Rx = (SR * np.cos(HR) - S * np.cos(H)) ** 2 + (SR * np.sin(HR) - S * np.sin(H)) ** 2
     Bx = (SB * np.cos(HB) - S * np.cos(H)) ** 2 + (SB * np.sin(HB) - S * np.sin(H)) ** 2
-    Ed_W = np.nan_to_num(np.power(np.sqrt(Wx), 0.5))
     Ed_R = np.nan_to_num(np.power(np.sqrt(Rx), 0.5))
     Ed_B = np.nan_to_num(np.power(np.sqrt(Bx), 0.5))
 
     # pixel candidates are those where the Euclidean distance is higher than the threshold
-    Ed_W[Ed_W < threshold] = 0
     Ed_R[Ed_R < threshold] = 0
     Ed_B[Ed_B < threshold] = 0
 
-    pixel_candidates = Ed_W + Ed_R + Ed_B
+    pixel_candidates = Ed_R + Ed_B
     pixel_candidates[pixel_candidates > 0] = 1
 
     return pixel_candidates
