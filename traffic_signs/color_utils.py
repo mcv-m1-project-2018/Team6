@@ -41,6 +41,27 @@ def pixel_colors(img, mask, bbox):
 
     return pixels
 
+def rgb2ihsl(R,G,B):
+    """
+    Convert from RGB to IHSL color space. IHSL stands for Improved HSL color space (H. Fleyeh).
+    """
+
+    #R = im[0]
+    #G = im[ 1]
+    #B = im[2]
+
+    numerador = R - G / 2 - B / 2
+    denominador = np.sqrt(np.square(R) + np.square(G) + np.square(B) - R * G - R * B - G * B)
+    theta = np.arccos(numerador / denominador)
+
+    if G >= B:
+        H= np.nan_to_num(theta)
+    else:
+        H = 360 - theta
+    S = max(R, G, B) - min(R, G, B)
+    L = 0.212 * R + 0.715 * G + 0.072 * B
+
+    return H, S, L
 
 def worker(img_file):
     name = os.path.splitext(os.path.split(img_file)[1])[0]
@@ -64,6 +85,23 @@ def reference_colors(images):
     hsv_colors = []
     for rgb in rgb_colors:
         hsv = list(colorsys.rgb_to_hsv(*(rgb/255)))
+        hsv[2] = 1
+        hsv_colors.append(hsv)
+
+    clt = KMeans(n_clusters=3)
+    labels = clt.fit_predict(hsv_colors)
+
+    return clt.cluster_centers_
+
+def reference_colors_ihsl(images):
+    with mp.Pool(8) as p:
+        r = p.map(worker, images)
+    rgb_colors = np.concatenate(r)
+
+    hsv_colors = []
+    for rgb in rgb_colors:
+        print(rgb)
+        hsv = list(rgb2ihsl(*(rgb / 255)))
         hsv[2] = 1
         hsv_colors.append(hsv)
 
@@ -137,11 +175,11 @@ def show_colors(colors):
 def main():
     images = glob.glob('data/train/*.jpg')
 
-    ref_colors = reference_colors(images)
+    ref_colors = reference_colors_ihsl(images)
     [print('({:.4f}, {:.4f}, {:.4f})'.format(*c)) for c in ref_colors]
 
-    rgb_histograms(images)
-    hue_histograms(images)
+    #rgb_histograms(images)
+    #hue_histograms(images)
 
 
 if __name__ == '__main__':
