@@ -4,12 +4,15 @@ import multiprocessing as mp
 import numpy as np
 import imageio
 from skimage.measure import label, regionprops
+from skimage import transform
 
 from matplotlib import pyplot as plt
 import matplotlib.patches as mpatches
+import cv2
 
 from evaluation.bbox_iou import bbox_iou
-from window_evaluation import ccl_window_evaluation
+from window_evaluation import ccl_window_evaluation, template_matching_evaluation
+
 
 def candidate_generation_window_example1(im, pixel_candidates):
     window_candidates = [[17.0, 12.0, 49.0, 44.0], [60.0,90.0,100.0,130.0]]
@@ -21,12 +24,6 @@ def candidate_generation_window_example2(im, pixel_candidates):
     window_candidates = [[21.0, 14.0, 54.0, 47.0], [63.0,92.0,103.0,132.0],[200.0,200.0,250.0,250.0]]
 
     return window_candidates
-
-
-# Create your own candidate_generation_window_xxx functions for other methods
-# Add them to the switcher dictionary in the switch_method() function
-# These functions should take an image, a pixel_candidates mask (and perhaps other parameters) as input and output the window_candidates list.
-
 
 def window_evaluation(pixel_candidates, bbox):
     return bool(np.random.binomial(1, 0.0001))  # returns True with probability 0.0001
@@ -56,6 +53,38 @@ def nms(bboxes, threshold=.5):
         if keep:
             indices.append(idx)
     return indices
+
+
+def _worker_template(x):
+    im, pixel_candidates, step, box_h, box_w, template = x
+    h, w = im.shape[:2]
+    template = transform.resize(template, (box_h, box_w), preserve_range=True)
+    template = np.round(template).astype(np.uint8)
+
+    window_candidates = []
+    for i in range(0, h-box_h, step):
+        for j in range(0, w-box_w, step):
+            bbox = [i, j, i+box_h, j+box_w]
+            if template_matching_evaluation(im, template, bbox):
+                window_candidates.append(bbox)
+
+    return window_candidates
+
+
+def template_matching(im, pixel_candidates, template, step=5, nms_threshold=.4):
+    scales = [(h, w) for h in range(30, 180, 20) for w in range(30, 180, 20)]
+
+    im = cv2.cvtColor(im, cv2.COLOR_RGB2GRAY)
+    im = np.round(im).astype(np.uint8)
+
+    with mp.Pool(processes=12) as p:
+        window_candidates = p.map(_worker_template, [(im, pixel_candidates, step, box_h, box_w, template) for box_h, box_w in scales])
+    window_candidates = [bbox for sublist in window_candidates for bbox in sublist]
+
+    indices = nms(window_candidates, threshold=nms_threshold)
+    window_candidates = [window_candidates[idx] for idx in indices]
+
+    return window_candidates
 
 
 def _worker(x):
@@ -147,10 +176,11 @@ if __name__ == '__main__':
     name = os.path.splitext(os.path.split(imfile)[1])[0]
     im = imageio.imread('data/train/{}.jpg'.format(name))
     mask = imageio.imread('data/train/mask/mask.{}.png'.format(name))
+    template = imageio.imread('shape_templates/circle.png')
 
     start = time.time()
-    window_candidates = sliding_window_par(im, mask)
+    window_candidates = template_matching(im, mask, template)
     end = time.time()
     print(end-start)
 
-    visualize_boxes(mask, window_candidates)
+    visualize_boxes(im, window_candidates)
