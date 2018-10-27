@@ -117,10 +117,10 @@ def ycrcb_histogram(image):
     bins = 256
 
     imageYCrCb = cv2.cvtColor(image, cv2.COLOR_BGR2YCrCb)
-    histY = cv2.calcHist([imageYCrCb], [0], None, [bins], [0, 256])
-    histCr = cv2.calcHist([imageYCrCb], [1], None, [bins], [0, 256])
-    histCb = cv2.calcHist([imageYCrCb], [2], None, [bins], [0, 256])
-    hist = np.vstack((cv2.normalize(histY, histY), cv2.normalize(histCr, histCr), cv2.normalize(histCb, histCb)))
+    histY = cv2.calcHist([imageYCrCb], [0], None, [bins], [0, 256]).ravel()
+    histCr = cv2.calcHist([imageYCrCb], [1], None, [bins], [0, 256]).ravel()
+    histCb = cv2.calcHist([imageYCrCb], [2], None, [bins], [0, 256]).ravel()
+    hist = np.concatenate((cv2.normalize(histY, histY), cv2.normalize(histCr, histCr), cv2.normalize(histCb, histCb)))
 
     return hist
 
