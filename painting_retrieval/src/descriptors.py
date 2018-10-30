@@ -9,7 +9,7 @@ from skimage.filters import gabor_kernel
 from sklearn.cluster import KMeans
 
 
-def _descriptor(image):
+def _descriptors(image):
     """
     Extract descriptors of an image.
 
@@ -17,7 +17,7 @@ def _descriptor(image):
         image (ndarray): (H x W x C) 3D array of type np.uint8 containing an image.
 
     Returns:
-        ndarray: list of 1D arrays of type np.float32 containing image descriptors.
+        list: list of 1D arrays of type np.float32 containing image descriptors.
 
     """
 
@@ -263,6 +263,8 @@ def extract_global_descriptors(image, method):
     return func[method](image)
 
 
-def extract_local_descriptors(image, keypoint_method, descriptor_method):
-    pass
-
+def extract_local_descriptors(image, keypoints, method):
+    func = {
+        'hog': lambda: None
+    }
+    return func[method](image, keypoints)
