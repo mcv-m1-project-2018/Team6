@@ -25,106 +25,53 @@ def _descriptors(image):
     pass
 
 
-# KEYPOINT DETECTORS
 
-
-def harris_corner_detector(image):
-    """
-    Extract keypoints from image using Harris Corner Detector
-    Args:
-        image (ndarray): (H x W x C) 3D array of type np.uint8 containing an image.
-
-    Returns:
-        ndarray: list of 1D arrays of type np.float32 containing image descriptors.
-    """
-
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray = np.float32(gray)
-    # cornerHarris function takes as arguments the image, blockSize, ksize (aperture parameter of Sobel derivative),
-    # k (Harris detector free parameter, which goes from 0.04 to 0.06)
-    # If ksize = -1, a 3x3 Scharr filter is used which gives better results than 3x3 Sobel filter
-    dst = cv2.cornerHarris(gray, 4, -1, 0.05)
-
-
-    # result is dilated for marking the corners, not important
-    dst = cv2.dilate(dst, None)
-
-    # Threshold for an optimal value, it may vary depending on the image. (It gives us the corners in the image)
-    image[dst > 0.01 * dst.max()] = [0, 0, 255]
-
-    cv2.imshow('dst', image)
-    if cv2.waitKey(0) & 0xff == 27:
-        cv2.destroyAllWindows()
-
-    return image
-
-
-def harris_corner_subpixel_accuracy(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    # find Harris corners
-    gray = np.float32(gray)
-    dst = cv2.cornerHarris(gray, 2, 3, 0.04)
-    dst = cv2.dilate(dst, None)
-    ret, dst = cv2.threshold(dst, 0.01 * dst.max(), 255, 0)
-    dst = np.uint8(dst)
-
-    # find centroids
-    ret, labels, stats, centroids = cv2.connectedComponentsWithStats(dst)
-
-    # define the criteria to stop and refine the corners
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
-    corners = cv2.cornerSubPix(gray, np.float32(centroids), (5, 5), (-1, -1), criteria)
-
-    # Now draw them
-    res = np.hstack((centroids, corners))
-    res = np.int0(res)
-    image[res[:, 1], res[:, 0]] = [0, 0, 255]
-    image[res[:, 3], res[:, 2]] = [0, 255, 0]
-
-    cv2.imshow('dst', image)
-    if cv2.waitKey(0) & 0xff == 27:
-        cv2.destroyAllWindows()
-
-    return image
 
 
 # LOCAL DESCRIPTORS
 
 
-def local_binary_pattern(image):
+def local_binary_pattern(image, keypoints):
     # compute the Local Binary Pattern representation
     # of the image, and then use the LBP representation
     # to build the histogram of patterns
+    result = []
+    for kp in keypoints:
+        img = image[kp[0] - kp.size:kp[0] + kp.size, kp[1] - kp.size:kp[0] + kp.size]
 
-    numPoints = 30
-    radius = 2
-    eps = 1e-7
+        numPoints = 30
+        radius = 2
+        eps = 1e-7
 
-    lbp = local_binary_pattern(image, numPoints,
-                                       radius, method="uniform")
-    (hist, _) = np.histogram(lbp.ravel(),
-                             bins=np.arange(0, numPoints + 3),
-                             range=(0, numPoints + 2))
+        lbp = local_binary_pattern(img, numPoints,
+                                           radius, method="uniform")
+        (hist, _) = np.histogram(lbp.ravel(),
+                                 bins=np.arange(0, numPoints + 3),
+                                 range=(0, numPoints + 2))
 
-    # normalize the histogram
-    hist = hist.astype("float")
-    hist /= (hist.sum() + eps)
+        # normalize the histogram
+        hist = hist.astype("float")
+        hist /= (hist.sum() + eps)
+
+        result.append(np.array(hist, dtype=np.float32))
 
     # return the histogram of Local Binary Patterns
-    return hist
+    return result
 
 
-def hog_descriptor(image):
+def hog_descriptor(image, keypoints):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    hog = cv2.HOGDescriptor()
-    descriptor = hog.compute(gray)
-    if descriptor is None:
-        descriptor = []
-    else:
-        descriptor = descriptor.ravel()
-
-    return descriptor
+    result = []
+    for kp in keypoints:
+        img = gray[kp[0]-kp.size:kp[0] + kp.size, kp[1]-kp.size:kp[0]+kp.size]
+        hog = cv2.HOGDescriptor()
+        descriptor = hog.compute(img)
+        if descriptor is None:
+            descriptor = []
+        else:
+            descriptor = descriptor.ravel()
+        result.append(np.array(descriptor, dtype=np.float32))
+    return result
 
 
 # GLOBAL DESCRIPTORS
@@ -375,6 +322,6 @@ def extract_local_descriptors(image, keypoints, method):
     }
     return func[method](image, keypoints)
 
+
 if __name__ == '__main__':
     image = imageio.imread('../data/query_devel_random/ima_000008.jpg')
-    harris_corner_subpixel_accuracy(image)
