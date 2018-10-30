@@ -34,7 +34,9 @@ def harris_corner_detector(image):
     # cornerHarris function takes as arguments the image, blockSize, ksize (aperture parameter of Sobel derivative),
     # k (Harris detector free parameter, which goes from 0.04 to 0.06)
     # If ksize = -1, a 3x3 Scharr filter is used which gives better results than 3x3 Sobel filter
-    corners = cv2.cornerHarris(gray, 4, -1, 0.05)
+    dst = cv2.cornerHarris(gray, 4, -1, 0.05)
+
+    corners = np.argwhere(dst > dst.max() * 0.01)
 
     # result is dilated for marking the corners, not important
     #dst = cv2.dilate(dst, None)
