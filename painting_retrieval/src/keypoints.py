@@ -13,7 +13,7 @@ def _keypoints(image):
     pass
 
 
-def extract_keypoints(image, method):
+def detect_keypoints(image, method):
     func = {
         'dog': lambda: None
     }

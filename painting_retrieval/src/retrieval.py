@@ -2,14 +2,14 @@ import multiprocessing.dummy as mp
 
 import imageio
 
-from keypoints import extract_keypoints
+from keypoints import detect_keypoints
 from descriptors import extract_local_descriptors
 from distances import match_descriptors
 
 
 def _read_and_extract(image_file, keypoint_method, descriptor_method):
     image = imageio.imread(image_file)
-    keypoints = extract_keypoints(image, keypoint_method)
+    keypoints = detect_keypoints(image, keypoint_method)
     descriptors = extract_local_descriptors(image, keypoints, descriptor_method)
     return descriptors
 
