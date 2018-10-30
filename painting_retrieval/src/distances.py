@@ -181,13 +181,5 @@ def compute_distance(u, v, metric):
     return func[metric](u, v)
 
 
-if __name__ == '__main__':
-    u = [0.2, 0.1, 0.3, 0.4]
-    v = [0.4, 0.3, 0.2, 0.1]
-    u = np.array(u, dtype=np.float32)
-    v = np.array(v, dtype=np.float32)
-    print(euclidean_distance(u, v))
-    print(l1_distance(u, v))
-    print(cosine_distance(u, v))
-    print(intersection(u, v))
-    print(correlation(u, v))
+def match_descriptors(u, v, distance_metric):
+    pass

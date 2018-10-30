@@ -246,7 +246,7 @@ def gabor_texture(image):
     return feats.ravel().astype(np.float32)
 
 
-def extract_descriptors(image, method):
+def extract_global_descriptors(image, method):
     func = {
         'rgb_histogram': rgb_histogram,
         'hsv_histogram': hsv_histogram,
@@ -263,11 +263,6 @@ def extract_descriptors(image, method):
     return func[method](image)
 
 
-if __name__ == '__main__':
-    import glob, imageio
+def extract_local_descriptors(image, keypoint_method, descriptor_method):
+    pass
 
-    image_file = np.random.choice(glob.glob('../data/museum_set_random/*.jpg'))
-    image = imageio.imread(image_file)
-    descriptors = extract_descriptors(image, 'cld')
-    print(len(descriptors), descriptors[0].dtype, descriptors[0].shape)
-    print(descriptors)

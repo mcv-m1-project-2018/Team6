@@ -33,18 +33,15 @@ def main(args):
         with open(args.corresp_file, 'rb') as f:
             query_gt = pickle.load(f)
 
-    color_methods = ['rgb_histogram', 'hsv_histogram', 'lab_histogram', 'ycrcb_histogram', 'cld',
-                     'rgb_histogram_pyramid', 'hsv_histogram_pyramid', 'lab_histogram_pyramid',
-                     'ycrcb_histogram_pyramid']
-    texture_methods = [None, 'gabor', 'glcm']
-    dist_metrics = ['euclidean_distance', 'l1_distance', 'cosine_distance']
-    hist_metrics = ['intersection', 'correlation', 'chi_square', 'hellinguer_distance', 'bhattacharya_distance']
+    keypoint_methods = ['dog']
+    descriptor_methods = ['hog']
+    distance_metrics = ['l2']
 
-    for texture_method, color_method, metric in product(texture_methods, color_methods, dist_metrics + hist_metrics):
-        print('({}, {}, {})'.format(color_method, texture_method, metric))
+    for keypoint_method, descriptor_method, distance_metric in product(keypoint_methods, descriptor_methods, distance_metrics):
+        print('({}, {}, {})'.format(keypoint_method, descriptor_method, distance_metric))
 
         with Timer('query_batch'):
-            results = query_batch(query_files, image_files, color_method, metric, texture_method)
+            results = query_batch(query_files, image_files, keypoint_method, descriptor_method, distance_metric)
 
         if args.mode == 'eval':
             actual = []
@@ -58,7 +55,7 @@ def main(args):
             predicted = []
             for query_file, result in zip(query_files, results):
                 predicted.append([_filename_to_id(image_file) for image_file, dist in result])
-            _save_results(predicted, args.results_path, method='{}_{}_{}'.format(color_method, texture_method, metric))
+            _save_results(predicted, args.results_path, method='{}_{}_{}'.format(keypoint_method, descriptor_method, distance_metric))
 
         else:
             raise ValueError('Invalid mode.')
