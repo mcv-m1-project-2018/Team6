@@ -106,40 +106,31 @@ def harris_corner_detector(image):
     """
     Extract keypoints from image using Harris Corner Detector
     Args:
-        image (ndarray): (H x W x C) 3D array of type np.uint8 containing an image.
+        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
 
     Returns:
         ndarray: list of 1D arrays of type np.float32 containing image descriptors.
     """
 
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray = np.float32(gray)
-    # cornerHarris function takes as arguments the image, blockSize, ksize (aperture parameter of Sobel derivative),
-    # k (Harris detector free parameter, which goes from 0.04 to 0.06)
-    # If ksize = -1, a 3x3 Scharr filter is used which gives better results than 3x3 Sobel filter
-    dst = cv2.cornerHarris(gray, 4, -1, 0.05)
+    dst = cv2.cornerHarris(image, 4, -1, 0.05)
 
     corners = np.argwhere(dst > dst.max() * 0.01)
 
-    # result is dilated for marking the corners, not important
-    #dst = cv2.dilate(dst, None)
-
-    # Threshold for an optimal value, it may vary depending on the image. (It gives us the corners in the image)
-    #image[dst > 0.01 * dst.max()] = [0, 0, 255]
-
-    #cv2.imshow('dst', image)
-    #if cv2.waitKey(0) & 0xff == 27:
-    #    cv2.destroyAllWindows()
-
-    return [cv2.KeyPoint(corner[0], corner[1], 10) for corner in corners]
+    return [cv2.KeyPoint(corner[0], corner[1], 9) for corner in corners]
 
 
 def harris_corner_subpixel_accuracy(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    """
+    Extract keypoints from image using Harris Corner Detector with subpixel accuracy
+    Args:
+        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+
+    Returns:
+        ndarray: list of 1D arrays of type np.float32 containing image descriptors.
+    """
 
     # find Harris corners
-    gray = np.float32(gray)
-    dst = cv2.cornerHarris(gray, 2, 3, 0.04)
+    dst = cv2.cornerHarris(image, 2, 3, 0.04)
     dst = cv2.dilate(dst, None)
     ret, dst = cv2.threshold(dst, 0.01 * dst.max(), 255, 0)
     dst = np.uint8(dst)
@@ -159,12 +150,14 @@ def detect_keypoints(image, method):
         'dog': difference_of_gaussian,
         'log': laplacian_of_gaussian,
         'doh': determinant_of_hessian,
-        'sift': sift_keypoints
+        'sift': sift_keypoints,
+        'harris_corner_detector': harris_corner_detector,
+        'harris_corner_subpixel': harris_corner_subpixel_accuracy
     }
     return func[method](image)
 
 
 if __name__ == '__main__':
     image = imageio.imread('../data/query_devel_random/ima_000008.jpg')
-    h = harris_corner_detector(image)
+    h = harris_corner_subpixel_accuracy(image)
     print(h)
