@@ -8,6 +8,7 @@ from skimage.feature import greycomatrix, greycoprops, local_binary_pattern
 from skimage.filters import gabor_kernel
 from sklearn.cluster import KMeans
 import imageio
+from keypoints import harris_corner_detector
 
 
 def _descriptors(image):
@@ -25,19 +26,18 @@ def _descriptors(image):
     pass
 
 
-
-
-
 # LOCAL DESCRIPTORS
 
 
-def local_binary_pattern(image, keypoints):
+def lbp(image, keypoints):
     # compute the Local Binary Pattern representation
     # of the image, and then use the LBP representation
     # to build the histogram of patterns
     result = []
+    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     for kp in keypoints:
-        img = image[kp[0] - kp.size:kp[0] + kp.size, kp[1] - kp.size:kp[0] + kp.size]
+        img = gray[round(kp.pt[0] - kp.size/2):round(kp.pt[0] + kp.size/2),
+        round(kp.pt[1] - kp.size/2):round(kp.pt[1] + kp.size/2)]
 
         numPoints = 30
         radius = 2
@@ -49,6 +49,7 @@ def local_binary_pattern(image, keypoints):
                                  bins=np.arange(0, numPoints + 3),
                                  range=(0, numPoints + 2))
 
+        print(hist)
         # normalize the histogram
         hist = hist.astype("float")
         hist /= (hist.sum() + eps)
@@ -61,17 +62,14 @@ def local_binary_pattern(image, keypoints):
 
 def hog_descriptor(image, keypoints):
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    result = []
-    for kp in keypoints:
-        img = gray[kp[0]-kp.size:kp[0] + kp.size, kp[1]-kp.size:kp[0]+kp.size]
-        hog = cv2.HOGDescriptor()
-        descriptor = hog.compute(img)
-        if descriptor is None:
-            descriptor = []
-        else:
-            descriptor = descriptor.ravel()
-        result.append(np.array(descriptor, dtype=np.float32))
-    return result
+    hog = cv2.HOGDescriptor()
+    descriptor = hog.compute(gray, locations=[kp.pt for kp in keypoints])
+    print(descriptor.shape)
+    if descriptor is None:
+        descriptor = []
+    else:
+        descriptor = descriptor.ravel()
+    return descriptor
 
 
 # GLOBAL DESCRIPTORS
@@ -325,3 +323,5 @@ def extract_local_descriptors(image, keypoints, method):
 
 if __name__ == '__main__':
     image = imageio.imread('../data/query_devel_random/ima_000008.jpg')
+    l = lbp(image, harris_corner_detector(image))
+    print(l[0].dtype)

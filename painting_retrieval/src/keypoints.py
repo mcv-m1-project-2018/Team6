@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import imageio
+
 
 def _keypoints(image):
     """
@@ -70,8 +72,15 @@ def harris_corner_subpixel_accuracy(image):
 
     return [cv2.KeyPoint(corner[0], corner[1], 5) for corner in corners]
 
+
 def detect_keypoints(image, method):
     func = {
         'dog': lambda: None
     }
     return func[method](image)
+
+
+if __name__ == '__main__':
+    image = imageio.imread('../data/query_devel_random/ima_000008.jpg')
+    h = harris_corner_detector(image)
+    print(h)
