@@ -34,9 +34,8 @@ def lbp(image, keypoints):
     # of the image, and then use the LBP representation
     # to build the histogram of patterns
     result = []
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     for kp in keypoints:
-        img = gray[round(kp.pt[0] - kp.size/2):round(kp.pt[0] + kp.size/2),
+        img = image[round(kp.pt[0] - kp.size/2):round(kp.pt[0] + kp.size/2),
         round(kp.pt[1] - kp.size/2):round(kp.pt[1] + kp.size/2)]
 
         numPoints = 30
@@ -49,7 +48,6 @@ def lbp(image, keypoints):
                                  bins=np.arange(0, numPoints + 3),
                                  range=(0, numPoints + 2))
 
-        print(hist)
         # normalize the histogram
         hist = hist.astype("float")
         hist /= (hist.sum() + eps)
@@ -61,15 +59,16 @@ def lbp(image, keypoints):
 
 
 def hog_descriptor(image, keypoints):
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     hog = cv2.HOGDescriptor()
-    descriptor = hog.compute(gray, locations=[kp.pt for kp in keypoints])
-    print(descriptor.shape)
-    if descriptor is None:
-        descriptor = []
-    else:
-        descriptor = descriptor.ravel()
-    return descriptor
+    result = []
+    for kp in keypoints:
+        descriptor = hog.compute(image, locations=[kp.pt])
+        if descriptor is None:
+            descriptor = []
+        else:
+            descriptor = descriptor.ravel()
+        result.append(np.array(descriptor, dtype=np.float32))
+    return result
 
 
 # GLOBAL DESCRIPTORS
@@ -322,12 +321,14 @@ def sift_descriptors(image, keypoints):
 
 def extract_local_descriptors(image, keypoints, method):
     func = {
-        'sift': sift_descriptors
+        'sift': sift_descriptors,
+        'hog': hog_descriptor,
+        'lbp': lbp
     }
     return func[method](image, keypoints)
 
 
 if __name__ == '__main__':
     image = imageio.imread('../data/query_devel_random/ima_000008.jpg')
-    l = lbp(image, harris_corner_detector(image))
-    print(l[0].dtype)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    l = hog_descriptor(image, harris_corner_detector(image))

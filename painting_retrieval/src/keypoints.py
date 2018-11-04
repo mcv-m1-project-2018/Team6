@@ -140,7 +140,7 @@ def harris_corner_subpixel_accuracy(image):
 
     # define the criteria to stop and refine the corners
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
-    corners = cv2.cornerSubPix(gray, np.float32(centroids), (5, 5), (-1, -1), criteria)
+    corners = cv2.cornerSubPix(image, np.float32(centroids), (5, 5), (-1, -1), criteria)
 
     return [cv2.KeyPoint(corner[0], corner[1], 5) for corner in corners]
 
