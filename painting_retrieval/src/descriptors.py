@@ -9,10 +9,6 @@ from skimage.filters import gabor_kernel
 from sklearn.cluster import KMeans
 
 
-import imageio
-from keypoints import harris_corner_detector, harris_corner_subpixel_accuracy
-
-
 def _descriptors(image):
     """
     Extract descriptors of an image.
@@ -26,53 +22,6 @@ def _descriptors(image):
     """
 
     pass
-
-
-# LOCAL DESCRIPTORS
-
-
-def lbp(image, keypoints):
-    # compute the Local Binary Pattern representation
-    # of the image, and then use the LBP representation
-    # to build the histogram of patterns
-    result = []
-    for kp in keypoints:
-        img = image[round(kp.pt[1] - kp.size/2):round(kp.pt[1] + kp.size/2),
-        round(kp.pt[0] - kp.size/2):round(kp.pt[0] + kp.size/2)]
-
-        numPoints = 30
-        radius = 2
-        eps = 1e-7
-
-        lbp = local_binary_pattern(img, numPoints, radius, method="uniform")
-        (hist, _) = np.histogram(lbp.ravel(),
-                                 bins=np.arange(0, numPoints + 3),
-                                 range=(0, numPoints + 2))
-
-        # normalize the histogram
-        hist = hist.astype("float")
-        hist /= (hist.sum() + eps)
-
-        result.append(np.array(hist, dtype=np.float32))
-
-    # return the histogram of Local Binary Patterns
-    return result
-
-
-def hog_descriptor(image, keypoints):
-    hog = cv2.HOGDescriptor()
-    result = []
-    for kp in keypoints:
-        descriptor = hog.compute(image, locations=[kp.pt])
-        if descriptor is None:
-            descriptor = []
-        else:
-            descriptor = descriptor.ravel()
-        result.append(np.array(descriptor, dtype=np.float32))
-    return result
-
-
-# GLOBAL DESCRIPTORS
 
 
 def block_descriptor(image, descriptor_fn, num_blocks):
@@ -408,6 +357,66 @@ def daisy_descriptors(image, keypoints):
     return descriptors
 
 
+def lbp(image, keypoints):
+    """
+        Extract descriptors from keypoints using the Local Binary Pattern method.
+
+        Args:
+            image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+            keypoints (list): Not used
+
+        Returns:
+            descriptors (ndarray): 2D array of type np.float32 containing local descriptors for the keypoints.
+
+        """
+    result = []
+    for kp in keypoints:
+        img = image[round(kp.pt[1] - kp.size/2):round(kp.pt[1] + kp.size/2),
+        round(kp.pt[0] - kp.size/2):round(kp.pt[0] + kp.size/2)]
+
+        numPoints = 30
+        radius = 2
+        eps = 1e-7
+
+        lbp = local_binary_pattern(img, numPoints, radius, method="uniform")
+        (hist, _) = np.histogram(lbp.ravel(),
+                                 bins=np.arange(0, numPoints + 3),
+                                 range=(0, numPoints + 2))
+
+        # normalize the histogram
+        hist = hist.astype("float")
+        hist /= (hist.sum() + eps)
+
+        result.append(np.array(hist, dtype=np.float32))
+
+    # return the histogram of Local Binary Patterns
+    return result
+
+
+def hog_descriptor(image, keypoints):
+    """
+        Extract descriptors from keypoints using the Histogram of Gradients method.
+
+        Args:
+            image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+            keypoints (list): Not used
+
+        Returns:
+            descriptors (ndarray): 2D array of type np.float32 containing local descriptors for the keypoints.
+
+        """
+    hog = cv2.HOGDescriptor()
+    result = []
+    for kp in keypoints:
+        descriptor = hog.compute(image, locations=[kp.pt])
+        if descriptor is None:
+            descriptor = []
+        else:
+            descriptor = descriptor.ravel()
+        result.append(np.array(descriptor, dtype=np.float32))
+    return result
+
+
 def extract_local_descriptors(image, keypoints, method):
     func = {
         'sift': sift_descriptors,
@@ -420,9 +429,3 @@ def extract_local_descriptors(image, keypoints, method):
     }
     return func[method](image, keypoints)
 
-
-if __name__ == '__main__':
-    image = imageio.imread('../data/query_devel_random/ima_000008.jpg')
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    l = hog_descriptor(image, harris_corner_subpixel_accuracy(image))
-    print(l)
