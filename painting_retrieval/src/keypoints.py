@@ -1,7 +1,14 @@
+from enum import Enum
+
 import numpy as np
 from skimage import feature
 import cv2
 import imageio
+
+
+class Mode(Enum):
+    QUERY = 0
+    IMAGE = 1
 
 
 def _keypoints(image):
@@ -17,23 +24,6 @@ def _keypoints(image):
     """
 
     pass
-
-
-def sift_keypoints(image):
-    """
-    Extract keypoints of an image using Difference of Gaussians method.
-
-    Args:
-        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
-
-    Returns:
-        (list of cv2.KeyPoint objects): list of keypoints.
-
-    """
-
-    sift = cv2.xfeatures2d.SIFT_create()
-    keypoints = sift.detect(image)
-    return keypoints
 
 
 def laplacian_of_gaussian(image):
@@ -99,8 +89,89 @@ def determinant_of_hessian(image):
     return keypoints
 
 
-# KEYPOINT DETECTORS
+def harris_laplacian(image):
+    """
+    Extract keypoints of an image using the Harris-Laplace feature detector as described
+    in "Scale & Affine Invariant Interest Point Detectors" (Mikolajczyk and Schimd).
 
+    Args:
+        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+
+    Returns:
+        (list of cv2.KeyPoint objects): list of keypoints.
+    """
+
+    hl = cv2.xfeatures2d.HarrisLaplaceFeatureDetector_create()
+    keypoints = hl.detect(image)
+    return keypoints
+
+
+def sift_keypoints(image, mode):
+    """
+    Extract keypoints of an image using Difference of Gaussians method.
+
+    Args:
+        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+        mode (int): indicates if keypoints are detected on a query or a database image.
+
+    Returns:
+        (list of cv2.KeyPoint objects): list of keypoints.
+
+    """
+
+    if mode == Mode.QUERY:
+        nkeypoints = 10000
+    elif mode == Mode.IMAGE:
+        nkeypoints = 1000
+    else:
+        nkeypoints = 0
+
+    sift = cv2.xfeatures2d.SIFT_create(nfeatures=nkeypoints)
+    keypoints = sift.detect(image)
+    return keypoints
+
+
+def surf_keypoints(image, mode):
+    """
+    Extract keypoints of an image using Box Filter to approximate LoG, and the
+    Hessian matrix for both scale and location.
+
+    Args:
+        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+        mode (int): indicates if keypoints are detected on a query or a database image.
+
+    Returns:
+        (list of cv2.KeyPoint objects): list of keypoints.
+
+    """
+
+    if mode == Mode.QUERY:
+        hessian_thresh = 400
+    elif mode == Mode.IMAGE:
+        hessian_thresh = 1000
+    else:
+        hessian_thresh = 400
+
+    surf = cv2.xfeatures2d.SURF_create(hessianThreshold=hessian_thresh)
+    keypoints = surf.detect(image)
+    return keypoints
+
+
+def orb_keypoints(image):
+    """
+    Extract keypoints of an image using the ORB method.
+
+    Args:
+        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+
+    Returns:
+        list (list of object keypoint): list of keypoints.
+
+    """
+
+    orb = cv2.ORB_create()
+    keypoints = orb.detect(image)
+    return keypoints
 
 def harris_corner_detector(image):
     """
@@ -145,16 +216,24 @@ def harris_corner_subpixel_accuracy(image):
     return [cv2.KeyPoint(corner[0], corner[1], 4) for corner in corners]
 
 
-def detect_keypoints(image, method):
+
+
+def detect_keypoints(image, method, mode=None):
     func = {
         'dog': difference_of_gaussian,
         'log': laplacian_of_gaussian,
         'doh': determinant_of_hessian,
+        'hl': harris_laplacian,
         'sift': sift_keypoints,
+        'surf': surf_keypoints,
+        'orb': orb_keypoints,
         'harris_corner_detector': harris_corner_detector,
         'harris_corner_subpixel': harris_corner_subpixel_accuracy
     }
-    return func[method](image)
+    if mode is not None:
+        return func[method](image, mode)
+    else:
+        return func[method](image)
 
 
 if __name__ == '__main__':
