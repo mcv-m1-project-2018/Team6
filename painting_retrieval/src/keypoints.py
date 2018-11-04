@@ -112,9 +112,9 @@ def harris_corner_detector(image):
         ndarray: list of 1D arrays of type np.float32 containing image descriptors.
     """
 
-    dst = cv2.cornerHarris(image, 4, -1, 0.05)
+    dst = cv2.cornerHarris(image, 4, -1, 0.04)
 
-    corners = np.argwhere(dst > dst.max() * 0.01)
+    corners = np.argwhere(dst > dst.max() * 0.10)
 
     return [cv2.KeyPoint(corner[0], corner[1], 9) for corner in corners]
 
@@ -130,9 +130,9 @@ def harris_corner_subpixel_accuracy(image):
     """
 
     # find Harris corners
-    dst = cv2.cornerHarris(image, 2, 3, 0.04)
+    dst = cv2.cornerHarris(image, 4, -1, 0.04)
     dst = cv2.dilate(dst, None)
-    ret, dst = cv2.threshold(dst, 0.01 * dst.max(), 255, 0)
+    ret, dst = cv2.threshold(dst, 0.10 * dst.max(), 255, 0)
     dst = np.uint8(dst)
 
     # find centroids
@@ -140,9 +140,9 @@ def harris_corner_subpixel_accuracy(image):
 
     # define the criteria to stop and refine the corners
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
-    corners = cv2.cornerSubPix(image, np.float32(centroids), (5, 5), (-1, -1), criteria)
+    corners = cv2.cornerSubPix(image, np.float32(centroids), (2, 2), (-1, -1), criteria)
 
-    return [cv2.KeyPoint(corner[0], corner[1], 5) for corner in corners]
+    return [cv2.KeyPoint(corner[0], corner[1], 4) for corner in corners]
 
 
 def detect_keypoints(image, method):

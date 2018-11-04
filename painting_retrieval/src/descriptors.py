@@ -4,11 +4,11 @@ import cv2
 import numpy as np
 from scipy import ndimage as ndi
 from scipy.fftpack import dct
-from skimage.feature import greycomatrix, greycoprops, local_binary_pattern
+from skimage.feature import greycomatrix, greycoprops, local_binary_pattern, hog
 from skimage.filters import gabor_kernel
 from sklearn.cluster import KMeans
 import imageio
-from keypoints import harris_corner_detector
+from keypoints import harris_corner_detector, harris_corner_subpixel_accuracy
 
 
 def _descriptors(image):
@@ -35,15 +35,14 @@ def lbp(image, keypoints):
     # to build the histogram of patterns
     result = []
     for kp in keypoints:
-        img = image[round(kp.pt[0] - kp.size/2):round(kp.pt[0] + kp.size/2),
-        round(kp.pt[1] - kp.size/2):round(kp.pt[1] + kp.size/2)]
+        img = image[round(kp.pt[1] - kp.size/2):round(kp.pt[1] + kp.size/2),
+        round(kp.pt[0] - kp.size/2):round(kp.pt[0] + kp.size/2)]
 
         numPoints = 30
         radius = 2
         eps = 1e-7
 
-        lbp = local_binary_pattern(img, numPoints,
-                                           radius, method="uniform")
+        lbp = local_binary_pattern(img, numPoints, radius, method="uniform")
         (hist, _) = np.histogram(lbp.ravel(),
                                  bins=np.arange(0, numPoints + 3),
                                  range=(0, numPoints + 2))
@@ -331,4 +330,5 @@ def extract_local_descriptors(image, keypoints, method):
 if __name__ == '__main__':
     image = imageio.imread('../data/query_devel_random/ima_000008.jpg')
     image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    l = hog_descriptor(image, harris_corner_detector(image))
+    l = hog_descriptor(image, harris_corner_subpixel_accuracy(image))
+    print(l)
