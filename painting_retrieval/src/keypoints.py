@@ -174,7 +174,8 @@ def orb_keypoints(image):
     return keypoints
 
 
-def harris_corner_detector(image):
+def harris_corner_detector(image, mode):
+
     """
     Extract keypoints from image using Harris Corner Detector.
 
@@ -191,7 +192,7 @@ def harris_corner_detector(image):
     return [cv2.KeyPoint(corner[0], corner[1], 9) for corner in corners]
 
 
-def harris_corner_subpixel_accuracy(image):
+def harris_corner_subpixel_accuracy(image, mode):
     """
     Extract keypoints from image using Harris Corner Detector with subpixel accuracy.
 
@@ -203,10 +204,17 @@ def harris_corner_subpixel_accuracy(image):
 
     """
 
+    if mode == Mode.QUERY:
+        thresh = 0.15
+    elif mode == Mode.IMAGE:
+        thresh = 0.10
+    else:
+        thresh = 0.15
+
     # find Harris corners
     dst = cv2.cornerHarris(image, 4, -1, 0.04)
     dst = cv2.dilate(dst, None)
-    ret, dst = cv2.threshold(dst, 0.10 * dst.max(), 255, 0)
+    ret, dst = cv2.threshold(dst, thresh * dst.max(), 255, 0)
     dst = np.uint8(dst)
 
     # find centroids
