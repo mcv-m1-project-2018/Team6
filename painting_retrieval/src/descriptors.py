@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from scipy import ndimage as ndi
 from scipy.fftpack import dct
-from skimage.feature import greycomatrix, greycoprops
+from skimage.feature import greycomatrix, greycoprops, local_binary_pattern
 from skimage.filters import gabor_kernel
 from sklearn.cluster import KMeans
 
@@ -357,12 +357,75 @@ def daisy_descriptors(image, keypoints):
     return descriptors
 
 
+def lbp(image, keypoints):
+    """
+        Extract descriptors from keypoints using the Local Binary Pattern method.
+
+        Args:
+            image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+            keypoints (list): Not used
+
+        Returns:
+            descriptors (ndarray): 2D array of type np.float32 containing local descriptors for the keypoints.
+
+        """
+    result = []
+    for kp in keypoints:
+        img = image[round(kp.pt[1] - kp.size/2):round(kp.pt[1] + kp.size/2),
+        round(kp.pt[0] - kp.size/2):round(kp.pt[0] + kp.size/2)]
+
+        numPoints = 30
+        radius = 2
+        eps = 1e-7
+
+        lbp = local_binary_pattern(img, numPoints, radius, method="uniform")
+        (hist, _) = np.histogram(lbp.ravel(),
+                                 bins=np.arange(0, numPoints + 3),
+                                 range=(0, numPoints + 2))
+
+        # normalize the histogram
+        hist = hist.astype("float")
+        hist /= (hist.sum() + eps)
+
+        result.append(np.array(hist, dtype=np.float32))
+
+    # return the histogram of Local Binary Patterns
+    return result
+
+
+def hog_descriptor(image, keypoints):
+    """
+        Extract descriptors from keypoints using the Histogram of Gradients method.
+
+        Args:
+            image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+            keypoints (list): Not used
+
+        Returns:
+            descriptors (ndarray): 2D array of type np.float32 containing local descriptors for the keypoints.
+
+        """
+    hog = cv2.HOGDescriptor()
+    result = []
+    for kp in keypoints:
+        descriptor = hog.compute(image, locations=[kp.pt])
+        if descriptor is None:
+            descriptor = []
+        else:
+            descriptor = descriptor.ravel()
+        result.append(np.array(descriptor, dtype=np.float32))
+    return result
+
+
 def extract_local_descriptors(image, keypoints, method):
     func = {
         'sift': sift_descriptors,
         'surf': surf_descriptors,
         'root_sift': root_sift_descriptors,
         'orb': orb_descriptors,
-        'daisy': daisy_descriptors
+        'daisy': daisy_descriptors,
+        'hog': hog_descriptor,
+        'lbp': lbp
     }
     return func[method](image, keypoints)
+

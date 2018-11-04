@@ -3,6 +3,7 @@ from enum import Enum
 import numpy as np
 from skimage import feature
 import cv2
+import imageio
 
 
 class Mode(Enum):
@@ -172,6 +173,50 @@ def orb_keypoints(image):
     keypoints = orb.detect(image)
     return keypoints
 
+def harris_corner_detector(image):
+    """
+    Extract keypoints from image using Harris Corner Detector
+    Args:
+        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+
+    Returns:
+        ndarray: list of 1D arrays of type np.float32 containing image descriptors.
+    """
+
+    dst = cv2.cornerHarris(image, 4, -1, 0.04)
+
+    corners = np.argwhere(dst > dst.max() * 0.10)
+
+    return [cv2.KeyPoint(corner[0], corner[1], 9) for corner in corners]
+
+
+def harris_corner_subpixel_accuracy(image):
+    """
+    Extract keypoints from image using Harris Corner Detector with subpixel accuracy
+    Args:
+        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+
+    Returns:
+        ndarray: list of 1D arrays of type np.float32 containing image descriptors.
+    """
+
+    # find Harris corners
+    dst = cv2.cornerHarris(image, 4, -1, 0.04)
+    dst = cv2.dilate(dst, None)
+    ret, dst = cv2.threshold(dst, 0.10 * dst.max(), 255, 0)
+    dst = np.uint8(dst)
+
+    # find centroids
+    ret, labels, stats, centroids = cv2.connectedComponentsWithStats(dst)
+
+    # define the criteria to stop and refine the corners
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.001)
+    corners = cv2.cornerSubPix(image, np.float32(centroids), (2, 2), (-1, -1), criteria)
+
+    return [cv2.KeyPoint(corner[0], corner[1], 4) for corner in corners]
+
+
+
 
 def detect_keypoints(image, method, mode=None):
     func = {
@@ -181,9 +226,17 @@ def detect_keypoints(image, method, mode=None):
         'hl': harris_laplacian,
         'sift': sift_keypoints,
         'surf': surf_keypoints,
-        'orb': orb_keypoints
+        'orb': orb_keypoints,
+        'harris_corner_detector': harris_corner_detector,
+        'harris_corner_subpixel': harris_corner_subpixel_accuracy
     }
     if mode is not None:
         return func[method](image, mode)
     else:
         return func[method](image)
+
+
+if __name__ == '__main__':
+    image = imageio.imread('../data/query_devel_random/ima_000008.jpg')
+    h = harris_corner_subpixel_accuracy(image)
+    print(h)
