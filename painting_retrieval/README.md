@@ -14,6 +14,48 @@ python src/main.py [--queries_path QUERIES_PATH]
 
 It can be run in two modes: `eval` and `test`. The `eval` mode will run all the queries in `queries_path` against all the images in `images_path` and compare the results to the true correspondences stored in `corresp_file` in order to compute a _MAP@K_ for every combination of descriptor method and distance metric. The `test` mode will run all the queries in `queries_path` against all the images in `images_path` and store the results in `results_path` in pickle format.
 
+#### Parameters
+For each combination (_keypoint\_method_, _descriptor\_method_, _distance\_metric_), the hyperparameters on `distances._filter_matches` and `distances._compute_similarity_score` should be updated correspondingly:
+
+* SIFT-SIFT-L2: 
+  * `image_desc=1000`
+  * `query_desc=10000`
+  * `ratio=0.5`
+  * `matches_thresh=10`
+  * `dist_thres=130`
+* SIFT-SIFT-L1:
+  * `image_desc=1000`
+  * `query_desc=10000`
+  * `ratio=0.5`
+  * `matches_thresh=10`
+  * `dist_thres=920`
+* SURF-SURF-L2:
+  * `image_hessianThreshold=1000`
+  * `query_hessianThreshold=400`
+  * `ratio=0.6`
+  * `matches_thresh=19`
+  * `dist_thres=0.13`
+* SURF-SURF-L1:
+  * `image_hessianThreshold=1000`
+  * `query_hessianThreshold=400`
+  * `ratio=0.5`
+  * `matches_thresh=10`
+  * `dist_thres=60`
+* ORB-ORB-Hamming:
+  * `ratio=0.5`
+  * `matches_thresh=2`
+  * `dist_thres=30`
+* HarrisCorner-SIFT-L2:
+  * `image_thresh=0.10`
+  * `query_thresh=0.15`
+  * `matches_thresh=7`
+  * `dist_thresh=100`
+* HarrisSubpixel-SIFT-L2: 
+  * `image_thresh=0.10`
+  * `query_thresh=0.10`
+  * `matches_thresh=7`
+  * `dist_thresh=100`
+
 ### Data files
 - query_corresp_simple_devel.pkl: True correspondences between query images and museum database images for the development simple_query. The correspondences are stored in a python dictionary where the key is the number in the name of the query image and the value is the number in the name of the dictionary image. This is necessary to evaluate your development results using the provided mapk() function.
 
