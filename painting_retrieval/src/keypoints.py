@@ -1,6 +1,13 @@
+from enum import Enum
+
 import numpy as np
 from skimage import feature
 import cv2
+
+
+class Mode(Enum):
+    QUERY = 0
+    IMAGE = 1
 
 
 def _keypoints(image):
@@ -16,22 +23,6 @@ def _keypoints(image):
     """
 
     pass
-
-
-def orb_keypoints(image):
-    """
-    Extract keypoints of an image using Difference of Gaussians method.
-
-    Args:
-        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
-
-    Returns:
-        list (list of object keypoint): list of keypoints.
-
-    """
-    orb = cv2.ORB_create()
-    kp = orb.detect(image, None)
-    return kp
 
 
 def laplacian_of_gaussian(image):
@@ -114,49 +105,85 @@ def harris_laplacian(image):
     return keypoints
 
 
-def sift_keypoints(image):
+def sift_keypoints(image, mode):
     """
     Extract keypoints of an image using Difference of Gaussians method.
 
     Args:
         image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+        mode (int): indicates if keypoints are detected on a query or a database image.
 
     Returns:
         (list of cv2.KeyPoint objects): list of keypoints.
 
     """
 
-    sift = cv2.xfeatures2d.SIFT_create()
+    if mode == Mode.QUERY:
+        nkeypoints = 10000
+    elif mode == Mode.IMAGE:
+        nkeypoints = 1000
+    else:
+        nkeypoints = 0
+
+    sift = cv2.xfeatures2d.SIFT_create(nfeatures=nkeypoints)
     keypoints = sift.detect(image)
     return keypoints
 
 
-def surf_keypoints(image):
+def surf_keypoints(image, mode):
     """
     Extract keypoints of an image using Box Filter to approximate LoG, and the
     Hessian matrix for both scale and location.
 
     Args:
         image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+        mode (int): indicates if keypoints are detected on a query or a database image.
 
     Returns:
         (list of cv2.KeyPoint objects): list of keypoints.
 
     """
 
-    surf = cv2.xfeatures2d.SURF_create()
+    if mode == Mode.QUERY:
+        hessian_thresh = 400
+    elif mode == Mode.IMAGE:
+        hessian_thresh = 1000
+    else:
+        hessian_thresh = 400
+
+    surf = cv2.xfeatures2d.SURF_create(hessianThreshold=hessian_thresh)
     keypoints = surf.detect(image)
     return keypoints
 
 
-def detect_keypoints(image, method):
+def orb_keypoints(image):
+    """
+    Extract keypoints of an image using the ORB method.
+
+    Args:
+        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+
+    Returns:
+        list (list of object keypoint): list of keypoints.
+
+    """
+
+    orb = cv2.ORB_create()
+    keypoints = orb.detect(image)
+    return keypoints
+
+
+def detect_keypoints(image, method, mode=None):
     func = {
         'dog': difference_of_gaussian,
         'log': laplacian_of_gaussian,
         'doh': determinant_of_hessian,
-        'orb': orb_keypoints,
         'hl': harris_laplacian,
         'sift': sift_keypoints,
-        'surf': surf_keypoints
+        'surf': surf_keypoints,
+        'orb': orb_keypoints
     }
-    return func[method](image)
+    if mode is not None:
+        return func[method](image, mode)
+    else:
+        return func[method](image)
