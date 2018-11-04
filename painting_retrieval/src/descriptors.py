@@ -282,6 +282,65 @@ def sift_descriptors(image, keypoints):
     return descriptors
 
 
+def root_sift_descriptors(image, keypoints, eps=1e-7):
+    """
+    Extract descriptors from keypoints using the Sift method.
+
+    Args:
+        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+        keypoints (list): list of cv2.KeyPoint objects.
+
+    Returns:
+        descriptors (ndarray): 2D array of type np.float32 containing local descriptors for the keypoints.
+
+    """
+
+    descs = sift_descriptors(image, keypoints)
+    descs /= (descs.sum(axis=1, keepdims=True) + eps)
+    descs = np.sqrt(descs)
+
+    return descs
+
+
+def orb_descriptors(image, keypoints):
+    """
+    Extract descriptors from keypoints using the ORB method.
+
+    Args:
+        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+        keypoints (list): list of cv2.KeyPoint objects.
+
+    Returns:
+        descriptors (ndarray): 2D array of type np.float32 containing local descriptors for the keypoints.
+
+    """
+
+    orb = cv2.ORB_create()
+    kp, des = orb.compute(image, keypoints)
+
+    return des
+
+
+def daisy_descriptors(image, keypoints):
+    """
+    Extract descriptors from keypoints using the Daisy method.
+
+    Args:
+        image (ndarray): (H x W) 2D array of type np.uint8 containing a grayscale image.
+        keypoints (list): Not used
+
+    Returns:
+        descriptors (ndarray): 2D array of type np.float32 containing local descriptors for the keypoints.
+
+    """
+
+    daisy = cv2.xfeatures2d.DAISY_create()
+    _, descriptors = daisy.compute(image, keypoints)
+
+    return descs
+
+
+
 def surf_descriptors(image, keypoints):
     """
     Extract descriptors from keypoints using the SURF method.
@@ -304,6 +363,9 @@ def surf_descriptors(image, keypoints):
 def extract_local_descriptors(image, keypoints, method):
     func = {
         'sift': sift_descriptors,
+        'root_sift': root_sift_descriptors,
+        'daisy': daisy_descriptors,
+        'orb': orb_descriptors,
         'surf': surf_descriptors
     }
     return func[method](image, keypoints)
