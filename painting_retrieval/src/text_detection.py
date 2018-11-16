@@ -21,7 +21,7 @@ def draw_boxes(image, boxes, color=(0, 255, 0)):
     for bbox in boxes:
         x1, y1, x2, y2 = bbox
         print('({:.2f}, {:.2f}, {:.2f}, {:.2f})'.format(x1, y1, x2, y2))
-        cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), color, thickness=2)
+        cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), color, thickness=1)
     return image
 
 
@@ -64,11 +64,10 @@ def fill_holes(mask):
 
 def detect(img, method='difference', show=False):
     im_h, im_w = img.shape[:2]
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    def tophat(gray):
-        tophat = cv2.morphologyEx(gray, cv2.MORPH_TOPHAT, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
-        blackhat = cv2.cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
+    def tophat(img):
+        tophat = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
+        blackhat = cv2.cv2.morphologyEx(img, cv2.MORPH_BLACKHAT, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
 
         tophat = tophat if np.sum(tophat) > np.sum(blackhat) else blackhat
 
@@ -78,9 +77,9 @@ def detect(img, method='difference', show=False):
         thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (1, 3)))
         return thresh
 
-    def difference(gray):
-        opening = cv2.morphologyEx(gray, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
-        closing = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
+    def difference(img):
+        opening = cv2.morphologyEx(img, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
+        closing = cv2.morphologyEx(img, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
         blur = cv2.GaussianBlur(closing - opening, (7, 7), 0)
 
         thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
@@ -99,7 +98,7 @@ def detect(img, method='difference', show=False):
     }
 
     # find contours
-    mask = func[method](gray)
+    mask = func[method](img)
     if show:
         imshow(mask)
 
@@ -157,6 +156,46 @@ def detect(img, method='difference', show=False):
     return boxes
 
 
+def correct_boxes(boxes, orig_h, orig_w, h, w):
+    w_ratio = orig_w / w
+    h_ratio = orig_h / h
+    return [(b[0] * w_ratio, b[1] * h_ratio, b[2] * w_ratio, b[3] * h_ratio) for b in boxes]
+
+
+def filter_text_keypoints(img, keypoints):
+    resized = imutils.resize(img, width=512)
+    boxes = detect(resized)
+    boxes = correct_boxes(boxes, *img.shape[:2], *resized.shape[:2])
+
+    def inside(pt, box):
+        # point = (x, y)
+        # box = (tlx, tly, brx, bry)
+        return box[0] <= pt[0] <= box[2] and box[1] <= pt[1] <= box[3]
+
+    filtered = []
+    for kp in keypoints:
+        for box in boxes:
+            if inside(kp.pt, box):
+                break
+        else:
+            filtered.append(kp)
+
+    return filtered
+
+
+def compute_text_mask(img):
+    resized = imutils.resize(img, width=512)
+    boxes = detect(resized)
+    boxes = correct_boxes(boxes, *img.shape[:2], *resized.shape[:2])
+
+    mask = np.full(img.shape[:2], 255, dtype=np.uint8)
+    for box in boxes:
+        tlx, tly, brx, bry = box
+        mask[int(tly):int(bry), int(tlx):int(brx)] = 0
+
+    return mask
+
+
 def bbox_iou(bboxA, bboxB):
     # determine the coordinates of the intersection rectangle
     xA = max(bboxA[0], bboxB[0])
@@ -177,33 +216,14 @@ def bbox_iou(bboxA, bboxB):
     return iou
 
 
-def correct_boxes(boxes, orig_h, orig_w, h, w):
-    w_ratio = orig_w / w
-    h_ratio = orig_h / h
-    return [(b[0] * w_ratio, b[1] * h_ratio, b[2] * w_ratio, b[3] * h_ratio) for b in boxes]
-
-
-def test(image_file):
-    print(image_file)
-
-    image = cv2.imread(image_file)
-    resized = imutils.resize(image, width=512)
-    boxes = detect(resized, show=False)
-    boxes = correct_boxes(boxes, *image.shape[:2], *resized.shape[:2])
-
-    rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    rgb = draw_boxes(rgb, boxes)
-    imshow(rgb)
-
-
 def eval(image_files, iou_thresh=0.5):
     predicted = []
     for image_file in image_files:
         print(image_file)
-        image = cv2.imread(image_file)
-        resized = imutils.resize(image, width=512)
+        gray = cv2.imread(image_file, cv2.IMREAD_GRAYSCALE)
+        resized = imutils.resize(gray, width=512)
         boxes = detect(resized)
-        boxes = correct_boxes(boxes, *image.shape[:2], *resized.shape[:2])
+        boxes = correct_boxes(boxes, *gray.shape[:2], *resized.shape[:2])
         predicted.append(boxes)
 
     with open('../w5_text_bbox_list.pkl', 'rb') as f:
@@ -225,6 +245,18 @@ def eval(image_files, iou_thresh=0.5):
     prec = tp / (tp + fp)
     rec = tp / npos
     print('prec: {:.4f}, rec: {:.4f}'.format(prec, rec))
+
+
+def test(image_file):
+    print(image_file)
+
+    img = cv2.imread(image_file)
+    resized = imutils.resize(img, width=512)
+    gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+    boxes = detect(gray, show=False)
+
+    rgb = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
+    imshow(draw_boxes(rgb, boxes))
 
 
 def main():
@@ -249,4 +281,13 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    #main()
+    from keypoints import detect_keypoints, Mode
+    image_file = random.choice(glob.glob('../data/w5_BBDD_random/*.jpg'))
+    gray = cv2.imread(image_file, cv2.IMREAD_GRAYSCALE)
+    gray = imutils.resize(gray, width=512)
+    keypoints = detect_keypoints(gray, 'orb', Mode.IMAGE, None)
+    imshow(cv2.drawKeypoints(gray, keypoints, None))
+    mask = compute_text_mask(gray)
+    keypoints = detect_keypoints(gray, 'orb', Mode.IMAGE, mask)
+    imshow(cv2.drawKeypoints(gray, keypoints, None))

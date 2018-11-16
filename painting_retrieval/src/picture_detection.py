@@ -163,9 +163,9 @@ def rotate_and_crop(img, bbox):
     return angle, img_crop
 
 
-def crop_picture(img, gray):
+def crop_picture(gray):
     frame_bbox = detect_frame(gray)
-    angle, img_crop = rotate_and_crop(img, frame_bbox)
+    angle, img_crop = rotate_and_crop(gray, frame_bbox)
 
     return img_crop
 
@@ -186,5 +186,3 @@ if __name__ == '__main__':
         angle, img_crop = rotate_and_crop(img, frame_bbox)
         plt.imshow(img_crop)
         plt.show()
-
-
