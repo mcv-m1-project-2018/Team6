@@ -284,30 +284,30 @@ def eval(image_files, iou_thresh=0.5, save=False):
 
     if save:
         save_results(predicted)
+    else:
+        with open('../w5_text_bbox_list.pkl', 'rb') as f:
+            actual = pickle.load(f)
 
-    with open('../w5_text_bbox_list.pkl', 'rb') as f:
-        actual = pickle.load(f)
+        tp = 0
+        fp = 0
+        npos = 0
 
-    tp = 0
-    fp = 0
-    npos = 0
+        for pred, gt in zip(predicted, actual):
+            npos += 1
+            for det in pred:
+                iou = bbox_iou(det, gt)
+                if iou >= iou_thresh:
+                    tp += 1
+                else:
+                    fp += 1
 
-    for pred, gt in zip(predicted, actual):
-        npos += 1
-        for det in pred:
-            iou = bbox_iou(det, gt)
-            if iou >= iou_thresh:
-                tp += 1
-            else:
-                fp += 1
+        prec = tp / (tp + fp)
+        rec = tp / npos
+        print('prec: {:.4f}, rec: {:.4f}'.format(prec, rec))
 
-    prec = tp / (tp + fp)
-    rec = tp / npos
-    print('prec: {:.4f}, rec: {:.4f}'.format(prec, rec))
-
-    overlap = [bbox_iou(det, gt) for pred, gt in zip(predicted, actual) for det in pred]
-    mean_overlap = np.mean(overlap)
-    print('mean IoU: {:.4f}'.format(mean_overlap))
+        overlap = [bbox_iou(det, gt) for pred, gt in zip(predicted, actual) for det in pred]
+        mean_overlap = np.mean(overlap)
+        print('mean IoU: {:.4f}'.format(mean_overlap))
 
 
 def test(image_file):
@@ -356,6 +356,7 @@ def main():
         #image = '../data/w5_BBDD_random/ima_000082.jpg'  # FIXME
         #image = '../data/w5_BBDD_random/ima_000085.jpg'  # FIXME
         #image = '../data/w5_BBDD_random/ima_000101.jpg'  # FIXME
+        #image = '../data/w5_BBDD_random/ima_000133.jpg'  # FIXME
         test(image)
 
     elif args.mode == 'eval':
